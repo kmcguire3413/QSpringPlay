@@ -27,6 +27,14 @@ public class LobbyService {
     private boolean             hasAuthenticated;
     private Set<Object>         eventHandlers;
     private boolean             doConnect;
+
+    public boolean isDoConnect() {
+        return doConnect;
+    }
+
+    public void setDoConnect(boolean doConnect) {
+        this.doConnect = doConnect;
+    }
     
     public LobbyService() {
         host = "lobby.springrts.com";
