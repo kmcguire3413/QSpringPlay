@@ -10,7 +10,6 @@ import com.kmcguire.slc.LobbyService.LoginInfoEndEvent;
 import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.core.Qt;
 import com.trolltech.qt.gui.QResizeEvent;
-import com.trolltech.qt.gui.QScrollArea;
 import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QTabWidget;
 import com.trolltech.qt.gui.QWidget;
@@ -41,11 +40,29 @@ public class MainWindow extends QWidget {
         
         taskArea = new QTaskArea();
         
+        QWidget     a, b, c;
+        
+        a = new QWidget();
+        b = new QWidget();
+        c = new QWidget();
+        
+        a.setStyleSheet("background-color: #99ff99;");
+        b.setStyleSheet("background-color: #9999ff;");
+        c.setStyleSheet("background-color: #99ffff;");
+        
+        a.resize(50, 25);
+        b.resize(50, 25);
+        c.resize(50, 25);
+        
+        taskArea.addWidget(a);
+        taskArea.addWidget(b);
+        taskArea.addWidget(c);
+        
         vsplitter.addWidget(tabWidget);
         vsplitter.addWidget(taskArea);
         vsplitter.show();       
         
-        addPanel(new LoginPanel());
+        addPanel(new LoginPanel(this));
     }
     
     public LobbyService getLobbyService() {
@@ -70,14 +87,17 @@ public class MainWindow extends QWidget {
     
     @EventHandler
     public void onJoin(JoinEvent event) {
-        addPanel(new ChatPanel(this, event.getChannel()));
-    }
-    
-    @EventHandler
-    public void onLobbyAuthentication(AuthenticationEvent event) {
-        event.setUser("kmcguire");
-        event.setPass("tty5413413");
-        event.setClientVersion("SLC0.0.0");
+        ChatPanel           cp;
+        QWidget             w;
+
+        //w = new QWidget();
+        //w.setStyleSheet("background-color: #ffff00;");
+
+        cp = new ChatPanel(this, event.getChannel());
+        cp.setStyleSheet("background-color: #ffff00;");
+
+        tabWidget.addTab(cp, cp.getTitle());
+        //tabWidget.addTab(cp, "ChatPanel");
     }
     
     @EventHandler
@@ -91,6 +111,8 @@ public class MainWindow extends QWidget {
     }
         
     private void netTimerEvent() {
-        lobbyService.tick();
+        if (lobbyService != null) {
+            lobbyService.tick();
+        }
     }
 }
