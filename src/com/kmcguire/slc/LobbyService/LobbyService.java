@@ -26,12 +26,13 @@ public class LobbyService {
     private ByteBuffer          buf;
     private boolean             hasAuthenticated;
     private Set<Object>         eventHandlers;
+    private boolean             doConnect;
     
     public LobbyService() {
         host = "lobby.springrts.com";
         port = 8200;
-        hasAuthenticated = false;
         eventHandlers = new HashSet();
+        doConnect = false;
     }
     
     public LobbyService(String _host, String _user, String _pass) {
@@ -42,7 +43,8 @@ public class LobbyService {
             host = _host;
             port = 8200;
         }
-        hasAuthenticated = false;
+        eventHandlers = new HashSet();
+        doConnect = false;
     }
     
     public void registerForEvents(Object o) {
@@ -283,6 +285,14 @@ public class LobbyService {
         }
     }
     
+    /**
+     * This breaks a byte buffer down into lines as they are placed
+     * into the byte buffer, and it hands the broken lines to the
+     * line processor.
+     * @param buf               A byte buffer in which new data is appended onto.
+     * @throws IOException      Thrown when in some cases an event passes data back
+     *                          which is written onto the socket such as login data.
+     */
     private void lineReader(ByteBuffer buf) throws IOException {
             int         x;
             byte[]      lbuf;
@@ -307,6 +317,12 @@ public class LobbyService {
             buf.limit(buf.capacity());
     }
     
+    /**
+     * This handles connecting the socket, checking if it has data, and
+     * processing the data and handing out events as required. It only
+     * blocks on socket connect, but I need to fix that so it does not
+     * block.
+     */
     public void tick() {
         InputStream     istrm;
         
@@ -315,9 +331,24 @@ public class LobbyService {
             socket = new Socket();
         }
         
+        // early exit if doConnect is false
+        if (!doConnect) {
+            if (socket.isConnected()) {
+                try {
+                    socket.close();
+                } catch (IOException ex) {
+                    callEvent(new NetworkErrorEvent(String.format("A IO exception occured closing the socket.")));    
+                }
+            }
+            return;
+        }
+        
+        // of course doConnect will be true
         if (!socket.isConnected()) {
             InetAddress         ina;
             InetSocketAddress   sa;
+            
+            hasAuthenticated = false;
             
             buf = ByteBuffer.allocate(4096 * 4);
             
