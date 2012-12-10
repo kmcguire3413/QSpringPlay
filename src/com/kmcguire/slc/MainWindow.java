@@ -1,27 +1,33 @@
 package com.kmcguire.slc;
 
-import com.kmcguire.slc.LobbyService.AuthenticationEvent;
+import com.kmcguire.slc.LobbyService.AddUserEvent;
 import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.JoinEvent;
 import com.kmcguire.slc.LobbyService.JoinFailedEvent;
 import com.kmcguire.slc.LobbyService.LobbyService;
 import com.kmcguire.slc.LobbyService.LoginInfoEndEvent;
+import com.kmcguire.slc.LobbyService.RemoveUserEvent;
 import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.core.Qt;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QTabWidget;
 import com.trolltech.qt.gui.QWidget;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainWindow extends QWidget {
-    private QTimer              netTimer;
-    private LobbyService        lobbyService;
-    private QTabWidget          tabWidget;
-    private QSplitter           vsplitter;
-    private QTaskArea           taskArea;
+    private QTimer                  netTimer;
+    private LobbyService            lobbyService;
+    private QTabWidget              tabWidget;
+    private QSplitter               vsplitter;
+    private QTaskArea               taskArea;
+    private Map<String, LobbyUser>  users;
     
     public MainWindow() {
+        users = new HashMap<String, LobbyUser>();
+        
         netTimer = new QTimer();
         netTimer.setSingleShot(false);
         netTimer.setInterval(200);
@@ -67,6 +73,24 @@ public class MainWindow extends QWidget {
         addPanel(new LoginPanel(this));
     }
     
+    public LobbyUser getLobbyUser(String user) {
+        return users.get(user);
+    }
+    
+    @EventHandler
+    private void onRemoveUser(RemoveUserEvent event) {
+        users.remove(event.getUser());
+    }
+    
+    @EventHandler
+    private void onAddUser(AddUserEvent event) {
+        LobbyUser       lu;
+        
+        lu = new LobbyUser(event.getUser(), event.getCountry(), event.getCpu());
+        
+        users.put(event.getUser(), lu);
+    }
+    
     public LobbyService getLobbyService() {
         return lobbyService;
     }
@@ -81,14 +105,14 @@ public class MainWindow extends QWidget {
     }
     
     @EventHandler
-    public void onBattleOpened(BattleOpenedEvent event) {
+    private void onBattleOpened(BattleOpenedEvent event) {
         if (event.getTitle().indexOf("Newbies") > -1) {
             //lobbyService.joinBattle(event.getId());
         }
     }
     
     @EventHandler
-    public void onJoin(JoinEvent event) {
+    private void onJoin(JoinEvent event) {
         ChatPanel           cp;
         QWidget             w;
 
@@ -103,12 +127,12 @@ public class MainWindow extends QWidget {
     }
     
     @EventHandler
-    public void onJoinFailed(JoinFailedEvent event) {
+    private void onJoinFailed(JoinFailedEvent event) {
         System.out.printf("joinfailed %s %s\n", event.getChannel(), event.getReason());
     }
     
     @EventHandler
-    public void onLoginInfoEnd(LoginInfoEndEvent event) {
+    private void onLoginInfoEnd(LoginInfoEndEvent event) {
         lobbyService.joinChannel("mychannel");
         lobbyService.joinChannel("zkdev");
     }

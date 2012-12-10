@@ -7,15 +7,19 @@ import com.kmcguire.slc.LobbyService.JoinedEvent;
 import com.kmcguire.slc.LobbyService.LeftEvent;
 import com.kmcguire.slc.LobbyService.SaidEvent;
 import com.trolltech.qt.core.Qt;
-import com.trolltech.qt.gui.QFrame;
+import com.trolltech.qt.gui.QIcon;
 import com.trolltech.qt.gui.QLineEdit;
 import com.trolltech.qt.gui.QListWidget;
 import com.trolltech.qt.gui.QListWidgetItem;
+import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QPlainTextEdit;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QWidget;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ChatPanel extends Panel {
     private String                         channel;
@@ -26,10 +30,13 @@ public class ChatPanel extends Panel {
     private QSplitter                      vsplitter;
     private QLineEdit                      editBox;
     private QWidget                        chatSurface;
+    private Map<String, QIcon>             flagIcons;
     
     public ChatPanel(MainWindow mwin, String channel) {
         this.mwin = mwin;
         this.channel = channel;
+        
+        flagIcons = new HashMap<String, QIcon>();
         
         //surface = new QWidget(this);
         //surface.setStyleSheet("background-color: #ffff33;");
@@ -81,11 +88,42 @@ public class ChatPanel extends Panel {
         mwin.getLobbyService().sayChannel(channel, msg);
     }
     
+    private QIcon loadFlagIcon(String code) {
+        QPixmap                 pixmap;
+        QIcon                   icon;
+        
+        pixmap = new QPixmap();
+        
+        if (!flagIcons.containsKey(code)) {
+            try {
+                pixmap.loadFromData(SpringLobbyClient.loadResource(String.format("flags/%s.png", code)));
+                icon = new QIcon(pixmap);
+                flagIcons.put(code, icon);
+            } catch (IOException ex) {
+                icon = null;
+            }
+        } else {
+            icon = flagIcons.get(code);
+        }
+        
+        return icon;
+    }
+    
     @EventHandler
     private void onClients(ClientsEvent event) {
+        QListWidgetItem         item;
+        QIcon                   icon;
+        LobbyUser               lu;
+        
         if (event.getChannel().equals(channel)) {
             for (String user : event.getClients()) {
-                users.addItem(user);
+                //users.addItem(user);
+                lu = mwin.getLobbyUser(user);
+                icon = loadFlagIcon(lu.getCountry());
+                item = new QListWidgetItem();
+                item.setIcon(icon);
+                item.setText(user);
+                users.addItem(item);
             }
         }
     }
