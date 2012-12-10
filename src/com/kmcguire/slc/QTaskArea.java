@@ -50,6 +50,7 @@ public class QTaskArea extends QWidget {
         
         th = 0;
         for (QWidget widget : widgets) {
+            widget.resize(w - scrollbar.width(), widget.height());
             th += widget.height();
         }
         

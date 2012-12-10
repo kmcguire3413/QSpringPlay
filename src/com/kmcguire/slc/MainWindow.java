@@ -40,6 +40,7 @@ public class MainWindow extends QWidget {
         
         taskArea = new QTaskArea();
         
+        /*
         QWidget     a, b, c;
         
         a = new QWidget();
@@ -57,6 +58,7 @@ public class MainWindow extends QWidget {
         taskArea.addWidget(a);
         taskArea.addWidget(b);
         taskArea.addWidget(c);
+        */
         
         vsplitter.addWidget(tabWidget);
         vsplitter.addWidget(taskArea);
@@ -94,7 +96,7 @@ public class MainWindow extends QWidget {
         //w.setStyleSheet("background-color: #ffff00;");
 
         cp = new ChatPanel(this, event.getChannel());
-        cp.setStyleSheet("background-color: #ffff00;");
+        //cp.setStyleSheet("background-color: #ffff00;");
 
         tabWidget.addTab(cp, cp.getTitle());
         //tabWidget.addTab(cp, "ChatPanel");
@@ -108,6 +110,7 @@ public class MainWindow extends QWidget {
     @EventHandler
     public void onLoginInfoEnd(LoginInfoEndEvent event) {
         lobbyService.joinChannel("mychannel");
+        lobbyService.joinChannel("zkdev");
     }
         
     private void netTimerEvent() {

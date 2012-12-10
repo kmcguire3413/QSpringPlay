@@ -71,14 +71,18 @@ public class LobbyService {
      */
     public void callEvent(Event event) {
         Class[]         args;
+        Object[]        _eventHandlers;
         
-        for (Object o : eventHandlers) {
+        _eventHandlers = eventHandlers.toArray();
+        
+        for (Object o : _eventHandlers) {
             for (Method m : o.getClass().getDeclaredMethods()) {
                 if (m.isAnnotationPresent(EventHandler.class)) {
                     args = m.getParameterTypes();
                     if (args.length == 1) {
                         if (args[0] == event.getClass()) {
                             try {
+                                m.setAccessible(true);
                                 m.invoke(o, event);
                             } catch (IllegalAccessException ex) {
                                 ex.printStackTrace();
@@ -284,6 +288,8 @@ public class LobbyService {
             event = new DeniedEvent(nm.getRemaining());
         } else if (cmd.equals("LEFT")) {
             event = new LeftEvent(nm.getWordParam(), nm.getWordParam(), nm.getRemaining());
+        } else if (cmd.equals("SAID")) {
+            event = new SaidEvent(nm.getWordParam(), nm.getWordParam(), nm.getRemaining());
         }
         
         if (event != null) {
