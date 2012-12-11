@@ -2,13 +2,14 @@ package com.kmcguire.slc;
 
 import com.trolltech.qt.gui.QImage;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -58,6 +59,7 @@ public class MapManager implements Runnable {
         if (instance == null) {            
             instance = new MapManager();
             thread = new Thread(instance);
+            thread.setDaemon(true);
             thread.start();
         }
         
@@ -87,6 +89,7 @@ public class MapManager implements Runnable {
         byte[]                  bbuf;
         int                     ava;
         QImage                  img;
+        int                     cnt;
                 
         url = String.format("http://zero-k.info/Resources/%s.minimap.jpg", mapName);
         
@@ -98,18 +101,19 @@ public class MapManager implements Runnable {
             bb = new ByteArrayOutputStream();
             bbuf = new byte[1024];
 
-            while (response.available() > 0) {
-                ava = response.available();
-                if (ava > bbuf.length) {
-                    ava = bbuf.length;
-                }
-                response.read(bbuf);
-                
-                bb.write(bbuf, 0, ava);
+            while ((cnt = response.read(bbuf)) > -1) {
+                bb.write(bbuf, 0, cnt);
             }
             
-            img = new QImage();
-            img.loadFromData(bb.toByteArray());
+            RandomAccessFile            raf;
+            raf = new RandomAccessFile(String.format("%s.jpg", mapName), "rw");
+            raf.write(bb.toByteArray());
+            raf.close();
+            
+            img = new QImage(String.format("%s.jpg", mapName));
+            //img = new QImage();
+            //System.out.printf("load:%b\n", img.loadFromData(bb.toByteArray()));
+            
             return img;
         } catch (MalformedURLException ex) {
             return null;

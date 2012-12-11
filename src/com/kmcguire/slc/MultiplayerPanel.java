@@ -4,18 +4,15 @@ import com.kmcguire.slc.LobbyService.BattleClosedEvent;
 import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
+import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.gui.QImage;
 import com.trolltech.qt.gui.QLabel;
+import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QScrollBar;
 import com.trolltech.qt.gui.QWidget;
 import java.util.HashMap;
 import java.util.Map;
-
-
-
-
-
 
 class BattlePanel extends QWidget {
     private int             id;
@@ -149,6 +146,8 @@ class BattlePanel extends QWidget {
     private int                     specs;
     private QImage                  mapImage;
     private boolean                 mapImageUpdated;
+    private String                  lastMap;
+    private QLabel                  labelMap;
     
     /**
      * This constructor will attempt to get the map image from the
@@ -188,23 +187,50 @@ class BattlePanel extends QWidget {
         resize(panelWidth, panelHeight);
         // add title
         labelTitle = new QLabel(this);
-        labelTitle.move(0, 0);
+        labelTitle.move(100, 0);
         labelTitle.setText(title);
         // add mod.... add springver
         // add pictures of people
+        
+        labelMap = new QLabel(this);
+        labelMap.move(0, 0);
+        labelMap.resize(100, 100);
+        labelMap.show();
+        handleMakingMap();
+    }
+    
+    /**
+     * This method is called in the constructor to create the map image
+     * widget, it is called in the onReposition method to handle creating
+     * the map image widget for a newly fetched map, and it is called in
+     * the onReposition method to handle when the map changes.
+     * 
+     * So this method is called for 3 different reasons.
+     */
+    public void handleMakingMap() {
+        final BattlePanel       tbp;
+        
+        tbp = this;
         
         mapImage = MapManager.getInstance().requestMinimap(map, new MapManagerCb() {
                 @Override
                 public void run(String mapName, QImage img) {
                     mp.setMapFetched();
-                    tbp.mapImage = img;
+                    // its going to get it above again anyhow
+                    // so i dont need to set it from this callback
+                    //tbp.mapImage = img;
                     tbp.mapImageUpdated = true;
                 }
         });
         
+        lastMap = map;
         tbp.mapImageUpdated = false;
         if (mapImage != null) {
             // add map image on left
+            System.out.printf("have(already had) map %s [%h]\n", map, mapImage);
+            labelMap.setPixmap(QPixmap.fromImage(mapImage));
+        } else {
+            System.out.printf("requested map %s\n", map);
         }
     }
     
@@ -215,10 +241,23 @@ class BattlePanel extends QWidget {
      * need to actually draw the image onto our panel (widget).
      */
     public void onReposition() {
+        /*
+         * This happens when the map has finally been fetched.
+         */
         if (mapImageUpdated) {
             mapImageUpdated = false;
             // now we should have a valid map image
             // and we can draw it
+            handleMakingMap();
+        }
+        
+        /*
+         * This happens when the map changed.
+         */
+        if (!lastMap.equals(map)) {
+            System.out.printf("map changed from %s to %s\n", lastMap, map);
+            handleMakingMap();
+            lastMap = map;
         }
     }
 }
@@ -237,12 +276,31 @@ public class MultiplayerPanel extends Panel {
     private int                         yoffset;
     private QScrollBar                  scrollbar;
     private boolean                     mapFetched;
+    private QTimer                      timer;
     
     private static final int            panelWidth;
     private static final int            panelHeight;
     
     public void setMapFetched() {
         mapFetched = true;
+    }
+    
+    /**
+     * This is called by the QTimer and it checks
+     * if mapFetched has been set, likely and should have been,
+     * by a asynchronous callback in a BattlePanel. So if set
+     * it means we need to re-position panels which will call
+     * the onReposition method for each BattlePanel allowing
+     * the battle panels to handle creating the fetched image
+     * if that is the case. All this is needed to get control
+     * back onto the QT thread and not the asynchronous MapManager
+     * callback thread.
+     */
+    public void checkMapFetched() {
+        if (mapFetched) {
+            mapFetched = false;
+            positionPanels();
+        }
     }
     
     static {
@@ -252,11 +310,17 @@ public class MultiplayerPanel extends Panel {
     
     public MultiplayerPanel(MainWindow _mwin) {
         mwin = _mwin;
+    
+        timer = new QTimer();
+        timer.timeout.connect(this, "checkMapFetched()");
+        timer.setInterval(1000);
+        timer.start();
         
         panels = new HashMap<Integer, BattlePanel>();
         surface = new QWidget(this);
         
         scrollbar = new QScrollBar(surface);
+        scrollbar.valueChanged.connect(this, "scrollbarChanged(int)");
         
         yoffset = 0;
         
@@ -287,11 +351,21 @@ public class MultiplayerPanel extends Panel {
     @EventHandler
     private void onBattleClosed(BattleClosedEvent event) {
         panels.remove(event.getId());
+        positionPanels();
     }
     
     @EventHandler
     private void onUpdateBattleInfo(UpdateBattleInfoEvent event) {
+        BattlePanel     bp;
         
+        bp = panels.get(event.getId());
+        if (bp != null) {
+            bp.setHasPass(event.isHasPass());
+            bp.setHash(event.getHash());
+            bp.setMap(event.getMap());
+            bp.setSpecs(event.getSpec());
+            positionPanels();
+        }
     }
     
     @Override
@@ -307,6 +381,7 @@ public class MultiplayerPanel extends Panel {
         positionPanels();
     }
     
+    @Override
     public void resizeEvent(QResizeEvent event) {
         resizeEvent(width(), height());
     }
@@ -343,7 +418,7 @@ public class MultiplayerPanel extends Panel {
             }
             
             x = colcur * panelWidth;
-            y = -yoffset + (rowcur * panelHeight);
+            y = yoffset + (rowcur * panelHeight);
             
             bp.move(x, y);
             bp.onReposition();
