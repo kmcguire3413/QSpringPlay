@@ -14,6 +14,10 @@ public class SpringLobbyClient {
         
         ins = SpringLobbyClient.class.getClassLoader().getResourceAsStream(path);
         
+        if (ins == null) {
+            throw new IOException(String.format("I/O exception trying to read %s.", path));
+        }
+        
         buf = new ByteArrayOutputStream();
         sbuf = new byte[1024];
         
@@ -34,6 +38,7 @@ public class SpringLobbyClient {
         app = new QApplication(args);
         
         //style = QStyleFactory.create("Plastique");
+        QApplication.addLibraryPath(".\\");
         
         win = new MainWindow();
         win.resize(600, 480);

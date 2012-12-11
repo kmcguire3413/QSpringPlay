@@ -100,6 +100,7 @@ public class ChatPanel extends Panel {
                 icon = new QIcon(pixmap);
                 flagIcons.put(code, icon);
             } catch (IOException ex) {
+                System.out.printf("I/O exception trying to read flags/%s.png\n", code);
                 icon = null;
             }
         } else {

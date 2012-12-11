@@ -144,7 +144,7 @@ class BattlePanel extends QWidget {
     private QLabel                  labelTitle;
     private MultiplayerPanel        mp;
     private int                     specs;
-    private QImage                  mapImage;
+    private QPixmap                 mapImage;
     private boolean                 mapImageUpdated;
     private String                  lastMap;
     private QLabel                  labelMap;
@@ -214,7 +214,7 @@ class BattlePanel extends QWidget {
         
         mapImage = MapManager.getInstance().requestMinimap(map, new MapManagerCb() {
                 @Override
-                public void run(String mapName, QImage img) {
+                public void run(String mapName, QPixmap img) {
                     mp.setMapFetched();
                     // its going to get it above again anyhow
                     // so i dont need to set it from this callback
@@ -227,8 +227,8 @@ class BattlePanel extends QWidget {
         tbp.mapImageUpdated = false;
         if (mapImage != null) {
             // add map image on left
-            System.out.printf("have(already had) map %s [%h]\n", map, mapImage);
-            labelMap.setPixmap(QPixmap.fromImage(mapImage));
+            System.out.printf("have(already had) map %s\n", map);
+            labelMap.setPixmap(mapImage);
         } else {
             System.out.printf("requested map %s\n", map);
         }

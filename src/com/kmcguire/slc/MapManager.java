@@ -1,7 +1,8 @@
 package com.kmcguire.slc;
 
-import com.trolltech.qt.gui.QImage;
+import com.trolltech.qt.gui.QPixmap;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,12 +43,12 @@ class Pair {
 public class MapManager implements Runnable {
     private static MapManager                                            instance;
     private static Thread                                                thread;
-    private static final Map<String, QImage>                             cache;
+    private static final Map<String, QPixmap>                            cache;
     private static final ConcurrentLinkedDeque<Pair>  requests;
     
     static {
         instance = null;
-        cache = new ConcurrentHashMap<String, QImage>();
+        cache = new ConcurrentHashMap<String, QPixmap>();
         requests = new ConcurrentLinkedDeque<Pair>();
     }
     
@@ -67,7 +68,7 @@ public class MapManager implements Runnable {
         return instance;
     }
     
-    public QImage requestMinimap(String mapName, MapManagerCb runnable) {
+    public QPixmap requestMinimap(String mapName, MapManagerCb runnable) {
         mapName = mapName.replace(' ', '_');
         if (cache.get(mapName) != null) {
             return cache.get(mapName);
@@ -81,17 +82,38 @@ public class MapManager implements Runnable {
         return null;
     }
     
-    public QImage fetchMinimap(String mapName) {
+    public QPixmap fetchMinimap(String mapName) {
         String                  url;
         URLConnection           connection;
         InputStream             response;
         ByteArrayOutputStream   bb;
         byte[]                  bbuf;
         int                     ava;
-        QImage                  img;
+        QPixmap                 img;
         int                     cnt;
-                
+        File                    file;
+        
         url = String.format("http://zero-k.info/Resources/%s.minimap.jpg", mapName);
+
+        file = new File(String.format("~/qsl/miniMapCache/%s.jpg", mapName));
+
+        if (file.exists()) {
+            RandomAccessFile            raf;
+            
+            try {
+                raf = new RandomAccessFile(file, "rw");
+                bbuf = new byte[(int)raf.length()];
+                raf.read(bbuf);
+                raf.close();
+                img = new QPixmap();
+                img.loadFromData(bbuf);
+                return img;                
+            } catch (FileNotFoundException ex) {
+                System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
+            } catch (IOException ex) {
+                System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
+            }
+        }
         
         try {
             connection = new URL(url).openConnection();
@@ -105,15 +127,28 @@ public class MapManager implements Runnable {
                 bb.write(bbuf, 0, cnt);
             }
             
+            file = new File("~/qsl/miniMapCache/");
+            
+            if (!file.exists()) {
+                file.mkdirs();
+            }
+
             RandomAccessFile            raf;
-            raf = new RandomAccessFile(String.format("%s.jpg", mapName), "rw");
-            raf.write(bb.toByteArray());
+            
+            file = new File(String.format("~/qsl/miniMapCache/%s.jpg", mapName));
+            
+            if (file.exists()) {
+                file.delete();
+            }
+            
+            bbuf = bb.toByteArray();
+            
+            raf = new RandomAccessFile(file, "rw");
+            raf.write(bbuf);
             raf.close();
             
-            img = new QImage(String.format("%s.jpg", mapName));
-            //img = new QImage();
-            //System.out.printf("load:%b\n", img.loadFromData(bb.toByteArray()));
-            
+            img = new QPixmap();
+            img.loadFromData(bbuf);
             return img;
         } catch (MalformedURLException ex) {
             return null;
@@ -125,7 +160,7 @@ public class MapManager implements Runnable {
     @Override
     public void run() {
         String          mapName;
-        QImage          img;
+        QPixmap         img;
         Pair            pair;
         MapManagerCb    runnable;
         
