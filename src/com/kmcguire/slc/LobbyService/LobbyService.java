@@ -212,7 +212,7 @@ public class LobbyService {
                     nm.getIntParam(), nm.getIntParam(), nm.getIntParam(),
                     nm.getWordParam(), nm.getWordParam(), nm.getIntParam(), nm.getIntParam(),
                     nm.getBoolParam(), nm.getIntParam(), nm.getLongParam(),
-                    nm.getWordParam(), nm.getWordParam(), nm.getWordParam()
+                    nm.getSentenceParam(), nm.getSentenceParam(), nm.getSentenceParam()
             );
         } else if (cmd.equals("JOINEDBATTLE")) {
             event = new JoinedBattleEvent(

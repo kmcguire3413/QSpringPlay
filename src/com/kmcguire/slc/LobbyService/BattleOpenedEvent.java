@@ -12,6 +12,24 @@ public class BattleOpenedEvent extends Event {
     private int             rank;
     private long            hash;
     private String          map;
+    private String          title;
+    private String          mod;
+
+    public BattleOpenedEvent(int id, int type, int nat, String user, String host, int port, int maxPlayers, boolean hasPass, int rank, long hash, String map, String title, String mod) {
+        this.id = id;
+        this.type = type;
+        this.nat = nat;
+        this.user = user;
+        this.host = host;
+        this.port = port;
+        this.maxPlayers = maxPlayers;
+        this.hasPass = hasPass;
+        this.rank = rank;
+        this.hash = hash;
+        this.map = map;
+        this.title = title;
+        this.mod = mod;
+    }
 
     public boolean isHasPass() {
         return hasPass;
@@ -63,29 +81,6 @@ public class BattleOpenedEvent extends Event {
 
     public String getHost() {
         return host;
-    }
-    private String          title;
-    private String          mod;
-    
-    public BattleOpenedEvent(
-            int _id, int _type, int _nat, String _user, String _host,
-            int _port, int _maxPlayers, boolean _hasPass,
-            int _rank, long _hash, String _map, String _title,
-            String _mod
-    ) {
-        host = _host;
-        id = _id;
-        type = _type;
-        nat = _nat;
-        user = _user;
-        port = _port;
-        maxPlayers = _maxPlayers;
-        hasPass = _hasPass;
-        rank = _rank;
-        hash = _hash;
-        map = _map;
-        title = _title;
-        mod = _mod;
     }
 
 }

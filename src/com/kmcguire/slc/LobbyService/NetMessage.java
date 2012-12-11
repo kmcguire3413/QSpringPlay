@@ -85,7 +85,7 @@ public class NetMessage {
             return null;
         }
         
-        i = message.indexOf(' ');
+        i = message.indexOf(sep);
         
         if (i > -1) {
             param = message.substring(0, i);

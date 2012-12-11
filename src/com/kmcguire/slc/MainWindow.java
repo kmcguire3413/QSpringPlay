@@ -71,6 +71,7 @@ public class MainWindow extends QWidget {
         vsplitter.show();       
         
         addPanel(new LoginPanel(this));
+        addPanel(new MultiplayerPanel(this));
     }
     
     public LobbyUser getLobbyUser(String user) {
