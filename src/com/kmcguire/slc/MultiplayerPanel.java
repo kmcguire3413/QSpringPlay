@@ -4,6 +4,7 @@ import com.kmcguire.slc.LobbyService.BattleClosedEvent;
 import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
+import com.trolltech.qt.gui.QImage;
 import com.trolltech.qt.gui.QLabel;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QScrollBar;
@@ -145,14 +146,29 @@ class BattlePanel extends QWidget {
     
     private QLabel                  labelTitle;
     private MultiplayerPanel        mp;
+    private int                     specs;
+    private QImage                  mapImage;
+    private boolean                 mapImageUpdated;
     
+    /**
+     * This constructor will attempt to get the map image from the
+     * MapManager shared instance. If it gets it the image is displayed
+     * as the map, but if it does not it schedules a callback which
+     * will set a boolean in MultiplayerPanel requesting a reposition
+     * which will then reposition all battle panels and of course call
+     * onReposition which can check if the map has been fetched and
+     * update the image holding widget for it's (this) panel.
+     */
     public BattlePanel(
-            MultiplayerPanel mp,
+            final MultiplayerPanel mp,
             int id, int type, int nat, 
             String user, String host, int port, 
             int maxPlayers, boolean hasPass, int rank, 
             long hash, String map, String title, 
             String mod, int specs, int panelWidth, int panelHeight) {
+        final BattlePanel       tbp;
+
+        tbp = this;
         this.mp = mp;
         this.id = id;
         this.type = type;
@@ -177,20 +193,57 @@ class BattlePanel extends QWidget {
         // add mod.... add springver
         // add pictures of people
         
-        // add map image on left
+        mapImage = MapManager.getInstance().requestMinimap(map, new MapManagerCb() {
+                @Override
+                public void run(String mapName, QImage img) {
+                    mp.setMapFetched();
+                    tbp.mapImage = img;
+                    tbp.mapImageUpdated = true;
+                }
+        });
+        
+        tbp.mapImageUpdated = false;
+        if (mapImage != null) {
+            // add map image on left
+        }
     }
-    private int             specs;
+    
+    /**
+     * This method came about for the need to check if a map has been fetched
+     * by an asynchronous thread. It does this by checking mapImageUpdated and
+     * if true then a previous queued map fetch has been completed so now we
+     * need to actually draw the image onto our panel (widget).
+     */
+    public void onReposition() {
+        if (mapImageUpdated) {
+            mapImageUpdated = false;
+            // now we should have a valid map image
+            // and we can draw it
+        }
+    }
 }
 
+/*
+ * This class extends a QWidget and will register event handlers in the
+ * LobbyService which will allow it to create battle panels for battles
+ * which are opened, update battle panels, or delete battle panels. It 
+ * also displays the battle panels where a battle panel is also an extended
+ * QWidget which draws it's own interface.
+ */
 public class MultiplayerPanel extends Panel {
     private MainWindow                  mwin;
     private Map<Integer, BattlePanel>   panels;
     private QWidget                     surface;
     private int                         yoffset;
     private QScrollBar                  scrollbar;
+    private boolean                     mapFetched;
     
     private static final int            panelWidth;
     private static final int            panelHeight;
+    
+    public void setMapFetched() {
+        mapFetched = true;
+    }
     
     static {
         panelWidth = 300;
@@ -293,7 +346,7 @@ public class MultiplayerPanel extends Panel {
             y = -yoffset + (rowcur * panelHeight);
             
             bp.move(x, y);
-            
+            bp.onReposition();
             ++colcur;
         }
     }
