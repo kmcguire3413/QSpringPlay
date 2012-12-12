@@ -107,6 +107,7 @@ public class MapManager implements Runnable {
                 raf.close();
                 img = new QPixmap();
                 img.loadFromData(bbuf);
+                System.out.printf("@@got image from cache for %s\n", mapName);
                 return img;                
             } catch (FileNotFoundException ex) {
                 System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");

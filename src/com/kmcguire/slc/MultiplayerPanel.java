@@ -5,12 +5,12 @@ import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
 import com.trolltech.qt.core.QTimer;
-import com.trolltech.qt.gui.QImage;
 import com.trolltech.qt.gui.QLabel;
 import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QScrollBar;
 import com.trolltech.qt.gui.QWidget;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -142,12 +142,38 @@ class BattlePanel extends QWidget {
     }
     
     private QLabel                  labelTitle;
+    private QLabel                  labelModAndSpringVer;
     private MultiplayerPanel        mp;
     private int                     specs;
     private QPixmap                 mapImage;
     private boolean                 mapImageUpdated;
     private String                  lastMap;
     private QLabel                  labelMap;
+    private QLabel                  labelMapOverlay;
+    private final static QPixmap    labelMapOverlayImageNormal;
+    private final static QPixmap    labelMapOverlayImageBattle;
+    
+    static {
+        byte[]          b;
+        
+        labelMapOverlayImageNormal = new QPixmap();
+        try {
+            b = SpringLobbyClient.loadResource("images/battleframenormal.png");
+            labelMapOverlayImageNormal.loadFromData(b);
+            labelMapOverlayImageNormal.scaled(68, 69);
+        } catch (IOException ex) {
+            System.out.printf("warning: I/O exception loading images/battleframenormal.png");
+        }
+        
+        labelMapOverlayImageBattle = new QPixmap();
+        try {
+            b = SpringLobbyClient.loadResource("images/battleframebattle.png");
+            labelMapOverlayImageBattle.loadFromData(b);
+            labelMapOverlayImageBattle.scaled(68, 69);
+        } catch (IOException ex) {
+            System.out.printf("warning: I/O exception loading images/battleframebattle.png");
+        }
+    }
     
     /**
      * This constructor will attempt to get the map image from the
@@ -187,15 +213,26 @@ class BattlePanel extends QWidget {
         resize(panelWidth, panelHeight);
         // add title
         labelTitle = new QLabel(this);
-        labelTitle.move(100, 0);
+        labelTitle.move(72, 0);
         labelTitle.setText(title);
+
+        labelModAndSpringVer = new QLabel(this);
+        labelModAndSpringVer.move(72, 10);
+        labelModAndSpringVer.setText(String.format("%s [rank:%d]", mod, rank));
+        
         // add mod.... add springver
         // add pictures of people
         
         labelMap = new QLabel(this);
-        labelMap.move(0, 0);
-        labelMap.resize(100, 100);
+        labelMap.move(4, 3);
+        labelMap.resize(60, 62);
         labelMap.show();
+        
+        labelMapOverlay = new QLabel(this);
+        labelMapOverlay.move(0, 0);
+        labelMapOverlay.resize(68, 69);
+        labelMapOverlay.setPixmap(labelMapOverlayImageBattle);
+        
         handleMakingMap();
     }
     
@@ -212,22 +249,40 @@ class BattlePanel extends QWidget {
         
         tbp = this;
         
-        mapImage = MapManager.getInstance().requestMinimap(map, new MapManagerCb() {
-                @Override
-                public void run(String mapName, QPixmap img) {
-                    mp.setMapFetched();
-                    // its going to get it above again anyhow
-                    // so i dont need to set it from this callback
-                    //tbp.mapImage = img;
-                    tbp.mapImageUpdated = true;
-                }
-        });
+        if (lastMap == null || !lastMap.equals(map)) {
+            mapImage = MapManager.getInstance().requestMinimap(map, new MapManagerCb() {
+                    @Override
+                    public void run(String mapName, QPixmap img) {
+                        mp.setMapFetched();
+                        // its going to get it above again anyhow
+                        // so i dont need to set it from this callback
+                        //tbp.mapImage = img;
+                        tbp.mapImageUpdated = true;
+                    }
+            });
+            
+            /*
+             * the requestMinimap may return null if it needs to aquire the image so
+             * therefore we can not scale it yet but this method will be called again
+             * when the requestMinimap will not fail and therefore we will eventually
+             * be able to copy and scale it
+             * 
+             * i really would love to share the scaled object because there may be
+             * multiple battle panels with the same map but the effort may not be
+             * worth the memory savings --kmcguire
+             */
+            if (mapImage != null) {
+                //mapImage = mapImage.copy();
+                mapImage = mapImage.scaled(60, 62);
+                lastMap = map;
+            }
+        }
         
-        lastMap = map;
         tbp.mapImageUpdated = false;
         if (mapImage != null) {
             // add map image on left
             System.out.printf("have(already had) map %s\n", map);
+            //mapImage.scaled(labelMap.width(), labelMap.height());
             labelMap.setPixmap(mapImage);
         } else {
             System.out.printf("requested map %s\n", map);
@@ -254,7 +309,7 @@ class BattlePanel extends QWidget {
         /*
          * This happens when the map changed.
          */
-        if (!lastMap.equals(map)) {
+        if (lastMap != null && !lastMap.equals(map)) {
             System.out.printf("map changed from %s to %s\n", lastMap, map);
             handleMakingMap();
             lastMap = map;

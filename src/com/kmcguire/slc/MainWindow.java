@@ -135,7 +135,7 @@ public class MainWindow extends QWidget {
     @EventHandler
     private void onLoginInfoEnd(LoginInfoEndEvent event) {
         lobbyService.joinChannel("mychannel");
-        lobbyService.joinChannel("zkdev");
+        //lobbyService.joinChannel("zkdev");
     }
         
     private void netTimerEvent() {
