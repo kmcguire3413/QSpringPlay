@@ -5,6 +5,7 @@ import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
 import com.trolltech.qt.core.QTimer;
+import com.trolltech.qt.gui.QFont;
 import com.trolltech.qt.gui.QLabel;
 import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QResizeEvent;
@@ -214,11 +215,12 @@ class BattlePanel extends QWidget {
         // add title
         labelTitle = new QLabel(this);
         labelTitle.move(72, 0);
+        labelTitle.setFont(new QFont("Tahoma", 10));
         labelTitle.setText(title);
 
         labelModAndSpringVer = new QLabel(this);
-        labelModAndSpringVer.move(72, 10);
-        labelModAndSpringVer.setText(String.format("%s [rank:%d]", mod, rank));
+        labelModAndSpringVer.move(72, 15);
+        labelModAndSpringVer.setText(String.format("%s [%s]", mod, map));
         
         // add mod.... add springver
         // add pictures of people
@@ -273,19 +275,20 @@ class BattlePanel extends QWidget {
              */
             if (mapImage != null) {
                 //mapImage = mapImage.copy();
+                labelModAndSpringVer.setText(String.format("%s [%s]", mod, map));
                 mapImage = mapImage.scaled(60, 62);
+                labelMap.setPixmap(mapImage);
                 lastMap = map;
+                System.out.printf("have(already had) map %s\n", map);
             }
         }
         
         tbp.mapImageUpdated = false;
         if (mapImage != null) {
             // add map image on left
-            System.out.printf("have(already had) map %s\n", map);
             //mapImage.scaled(labelMap.width(), labelMap.height());
-            labelMap.setPixmap(mapImage);
         } else {
-            System.out.printf("requested map %s\n", map);
+            //System.out.printf("requested map %s\n", map);
         }
     }
     
@@ -406,6 +409,11 @@ public class MultiplayerPanel extends Panel {
     @EventHandler
     private void onBattleClosed(BattleClosedEvent event) {
         panels.remove(event.getId());
+        positionPanels();
+    }
+    
+    @EventHandler
+    private void onBattleUsersChanged(BattleUsersChangedEvent event) {
         positionPanels();
     }
     

@@ -1,10 +1,14 @@
 package com.kmcguire.slc;
 
 import com.kmcguire.slc.LobbyService.AddUserEvent;
+import com.kmcguire.slc.LobbyService.BattleClosedEvent;
 import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
+import com.kmcguire.slc.LobbyService.ClientStatusEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.JoinEvent;
 import com.kmcguire.slc.LobbyService.JoinFailedEvent;
+import com.kmcguire.slc.LobbyService.JoinedBattleEvent;
+import com.kmcguire.slc.LobbyService.LeftBattleEvent;
 import com.kmcguire.slc.LobbyService.LobbyService;
 import com.kmcguire.slc.LobbyService.LoginInfoEndEvent;
 import com.kmcguire.slc.LobbyService.RemoveUserEvent;
@@ -15,7 +19,9 @@ import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QTabWidget;
 import com.trolltech.qt.gui.QWidget;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class MainWindow extends QWidget {
     private QTimer                  netTimer;
@@ -23,10 +29,13 @@ public class MainWindow extends QWidget {
     private QTabWidget              tabWidget;
     private QSplitter               vsplitter;
     private QTaskArea               taskArea;
-    private Map<String, LobbyUser>  users;
+    
+    private Map<String, LobbyUser>          users;
+    private Map<Integer, Set<String>>       battleList;    
     
     public MainWindow() {
         users = new HashMap<String, LobbyUser>();
+        battleList = new HashMap<Integer, Set<String>>();
         
         netTimer = new QTimer();
         netTimer.setSingleShot(false);
@@ -80,7 +89,64 @@ public class MainWindow extends QWidget {
     
     @EventHandler
     private void onRemoveUser(RemoveUserEvent event) {
+        // remove the user from any battle they were in because
+        // i do not know if the server will send a message saying 
+        // that they left the battle
+        if (users.get(event.getUser()).getBattleId() > -1) {
+            battleList.get(users.get(event.getUser()).getBattleId()).remove(event.getUser());
+        }
+        
         users.remove(event.getUser());
+    }
+    
+    @EventHandler
+    private void onClientStatus(ClientStatusEvent event) {
+        LobbyUser       lu;
+        
+        lu = users.get(event.getUser());
+        
+        if (lu != null) {
+            lu.setStatus(event.getStatus());
+        }
+    }
+    
+    /**
+     * The battle list is maintained by the MainWindow class and this
+     * list provides a Set of the user names that are currently in this
+     * battle. This is a helpful service because otherwise this would be
+     * re-implemented any where it is needed. This method may need to be
+     * moved into a the LobbyService namespace? --kmcguire
+     * @param id            the battle identifier as a integer
+     * @return              a Set<String> containing the users in this battle or null
+     */
+    public Set<String> getBattleList(int id) {
+        return battleList.get(id);
+    }
+    
+    @EventHandler
+    private void onJoinedBattle(JoinedBattleEvent event) {
+        LobbyUser                   lu;
+        BattleUsersChangedEvent     buce;
+        
+        lu = users.get(event.getUser());
+        
+        if (lu != null) {
+            lu.setBattleId(event.getId());
+            battleList.get(event.getId()).add(event.getUser());
+            
+            buce = new BattleUsersChangedEvent(event.getId());
+            lobbyService.callEvent(buce);
+        }        
+    }
+    
+    @EventHandler
+    private void onLeftBattle(LeftBattleEvent event) {
+        BattleUsersChangedEvent     buce;
+        
+        battleList.get(event.getId()).remove(event.getUser());
+        
+        buce = new BattleUsersChangedEvent(event.getId());
+        lobbyService.callEvent(buce);
     }
     
     @EventHandler
@@ -107,9 +173,22 @@ public class MainWindow extends QWidget {
     
     @EventHandler
     private void onBattleOpened(BattleOpenedEvent event) {
-        if (event.getTitle().indexOf("Newbies") > -1) {
+        battleList.put(event.getId(), new HashSet<String>());
+        
+        //if (event.getTitle().indexOf("Newbies") > -1) {
             //lobbyService.joinBattle(event.getId());
+        //}
+    }
+    
+    @EventHandler
+    private void onBattleClosed(BattleClosedEvent event) {
+        // just to make sure let us set all users known to be
+        // in this battle to -1 just to be on the safe side
+        for (String user : battleList.get(event.getId())) {
+            users.get(user).setBattleId(-1);
         }
+        
+        battleList.remove(event.getId());
     }
     
     @EventHandler
