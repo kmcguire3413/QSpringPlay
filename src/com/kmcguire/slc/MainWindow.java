@@ -134,7 +134,7 @@ public class MainWindow extends QWidget {
             lu.setBattleId(event.getId());
             battleList.get(event.getId()).add(event.getUser());
             
-            buce = new BattleUsersChangedEvent(event.getId());
+            buce = new BattleUsersChangedEvent(event.getId(), battleList.get(event.getId()));
             lobbyService.callEvent(buce);
         }        
     }
@@ -145,7 +145,7 @@ public class MainWindow extends QWidget {
         
         battleList.get(event.getId()).remove(event.getUser());
         
-        buce = new BattleUsersChangedEvent(event.getId());
+        buce = new BattleUsersChangedEvent(event.getId(), battleList.get(event.getId()));
         lobbyService.callEvent(buce);
     }
     
