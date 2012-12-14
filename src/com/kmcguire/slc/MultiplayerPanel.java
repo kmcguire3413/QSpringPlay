@@ -6,6 +6,7 @@ import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
 import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.gui.QLabel;
+import com.trolltech.qt.gui.QMouseEvent;
 import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QScrollBar;
@@ -16,7 +17,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 class Battle {
     public int          id;
@@ -141,6 +141,13 @@ public class MultiplayerPanel extends Panel {
         bp = makeBattlePanel(event.getId());
         bp.setParent(surface);
         ipanels.add(bp);
+        
+        bp.setCb(new BattlePanelCb() {
+            @Override
+            public void onMouseRelease(QMouseEvent event) {
+                System.out.printf("onMouseRelease!\n");
+            }
+        });
         
         // otherwise the panel is going to be at 0:0 and
         // will be visible

@@ -1,6 +1,7 @@
 package com.kmcguire.slc;
 
 import com.trolltech.qt.gui.QLabel;
+import com.trolltech.qt.gui.QMouseEvent;
 import com.trolltech.qt.gui.QWidget;
 
 class BattlePanel extends QWidget {
@@ -11,6 +12,43 @@ class BattlePanel extends QWidget {
     private String          title;
     private String          mod;
     private String          curMap;
+    private BattlePanelCb   cb;
+
+    public BattlePanelCb getCb() {
+        return cb;
+    }
+
+    public void setCb(BattlePanelCb cb) {
+        this.cb = cb;
+    }
+    
+    @Override
+    public void mouseMoveEvent(QMouseEvent event) {
+        if (cb == null)
+            return;
+        cb.onMouseDoubleClick(event);
+    }
+    
+    @Override
+    public void mousePressEvent(QMouseEvent event) {
+        if (cb == null)
+            return;
+        cb.onMousePress(event);
+    }
+    
+    @Override
+    public void mouseReleaseEvent(QMouseEvent event) {
+        if (cb == null)
+            return;
+        cb.onMouseRelease(event);
+    }
+    
+    @Override
+    public void mouseDoubleClickEvent(QMouseEvent event) {
+        if (cb == null)
+            return;
+        cb.onMouseDoubleClick(event);
+    }
 
     public String getCurMap() {
         return curMap;
