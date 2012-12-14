@@ -2,15 +2,15 @@ package com.kmcguire.slc.LobbyService;
 
 public class JoinedBattleEvent extends Event {
     private int             id;
-    private String          nick;
+    private String          user;
     private String          userScriptPassword;
 
     public int getId() {
         return id;
     }
 
-    public String getNick() {
-        return nick;
+    public String getUser() {
+        return user;
     }
 
     public String getUserScriptPassword() {
@@ -19,7 +19,7 @@ public class JoinedBattleEvent extends Event {
 
     public JoinedBattleEvent(int id, String nick, String userScriptPassword) {
         this.id = id;
-        this.nick = nick;
+        this.user = nick;
         this.userScriptPassword = userScriptPassword;
     }
 }

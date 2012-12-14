@@ -118,7 +118,7 @@ public class MultiplayerPanel extends Panel {
         tmp = mapUpdates;
         mapUpdates = new LinkedHashSet<MapUpdate>();
         
-        for (MapUpdate mu : mapUpdates) {
+        for (MapUpdate mu : tmp) {
             mu.label.setPixmap(mu.image);
         }
     }
