@@ -69,9 +69,34 @@ public class MapManager implements Runnable {
     }
     
     public QPixmap requestMinimap(String mapName, MapManagerCb runnable) {
+        File                file;
+        byte[]              bbuf;
+        QPixmap             img;
+        
         mapName = mapName.replace(' ', '_');
         if (cache.get(mapName) != null) {
             return cache.get(mapName);
+        }
+        
+        file = new File(String.format("~/qsl/miniMapCache/%s.jpg", mapName));
+
+        if (file.exists()) {
+            RandomAccessFile            raf;
+            
+            try {
+                raf = new RandomAccessFile(file, "rw");
+                bbuf = new byte[(int)raf.length()];
+                raf.read(bbuf);
+                raf.close();
+                img = new QPixmap();
+                img.loadFromData(bbuf);
+                System.out.printf("@@got image from cache for %s\n", mapName);
+                return img;                
+            } catch (FileNotFoundException ex) {
+                System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
+            } catch (IOException ex) {
+                System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
+            }
         }
         
         requests.add(new Pair(mapName, runnable));
@@ -94,27 +119,6 @@ public class MapManager implements Runnable {
         File                    file;
         
         url = String.format("http://zero-k.info/Resources/%s.minimap.jpg", mapName);
-
-        file = new File(String.format("~/qsl/miniMapCache/%s.jpg", mapName));
-
-        if (file.exists()) {
-            RandomAccessFile            raf;
-            
-            try {
-                raf = new RandomAccessFile(file, "rw");
-                bbuf = new byte[(int)raf.length()];
-                raf.read(bbuf);
-                raf.close();
-                img = new QPixmap();
-                img.loadFromData(bbuf);
-                System.out.printf("@@got image from cache for %s\n", mapName);
-                return img;                
-            } catch (FileNotFoundException ex) {
-                System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
-            } catch (IOException ex) {
-                System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
-            }
-        }
         
         try {
             connection = new URL(url).openConnection();
