@@ -14,10 +14,13 @@ import com.kmcguire.slc.LobbyService.LoginInfoEndEvent;
 import com.kmcguire.slc.LobbyService.RemoveUserEvent;
 import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.core.Qt;
+import com.trolltech.qt.gui.QIcon;
+import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QTabWidget;
 import com.trolltech.qt.gui.QWidget;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,6 +35,8 @@ public class MainWindow extends QWidget {
     
     private Map<String, LobbyUser>          users;
     private Map<Integer, Set<String>>       battleList;    
+    
+    private Map<String, QIcon>              flagIcons;
     
     public MainWindow() {
         users = new HashMap<String, LobbyUser>();
@@ -54,6 +59,8 @@ public class MainWindow extends QWidget {
         tabWidget.resize(this.width(), this.height());
         
         taskArea = new QTaskArea();
+        
+        flagIcons = new HashMap<String, QIcon>();
         
         /*
         QWidget     a, b, c;
@@ -81,6 +88,34 @@ public class MainWindow extends QWidget {
         
         addPanel(new LoginPanel(this));
         addPanel(new MultiplayerPanel(this));
+        try {
+            addPanel(new BattleRoomPanel(this));
+        } catch (LobbyGeneralException ex) {
+            System.out.printf("warning: could not create BattleRoomPanel.. do you have multiple MainWindow objects?");
+            System.out.printf("warning: or maybe you have already created a BattleRoomPanel? only one can exist....");
+        }
+    }
+    
+    public QIcon getFlagIcon(String code) {
+        QPixmap                 pixmap;
+        QIcon                   icon;
+        
+        pixmap = new QPixmap();
+        
+        if (!flagIcons.containsKey(code)) {
+            try {
+                pixmap.loadFromData(SpringLobbyClient.loadResource(String.format("flags/%s.png", code)));
+                icon = new QIcon(pixmap);
+                flagIcons.put(code, icon);
+            } catch (IOException ex) {
+                System.out.printf("I/O exception trying to read flags/%s.png\n", code);
+                icon = null;
+            }
+        } else {
+            icon = flagIcons.get(code);
+        }
+        
+        return icon;
     }
     
     public LobbyUser getLobbyUser(String user) {
@@ -93,7 +128,9 @@ public class MainWindow extends QWidget {
         // i do not know if the server will send a message saying 
         // that they left the battle
         if (users.get(event.getUser()).getBattleId() > -1) {
-            battleList.get(users.get(event.getUser()).getBattleId()).remove(event.getUser());
+            if (battleList.get(users.get(event.getUser()).getBattleId()) != null) {
+                battleList.get(users.get(event.getUser()).getBattleId()).remove(event.getUser());
+            }
         }
         
         users.remove(event.getUser());

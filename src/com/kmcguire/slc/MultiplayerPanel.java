@@ -62,10 +62,13 @@ public class MultiplayerPanel extends Panel {
     
     private static final int            panelWidth;
     private static final int            panelHeight;
+    private static final int            surfaceY;
             
     static {
         panelWidth = 300;
         panelHeight = 125;
+        
+        surfaceY = 50;
         
         frameNormal = new QPixmap();
         frameBattle = new QPixmap();
@@ -127,6 +130,7 @@ public class MultiplayerPanel extends Panel {
     private void onBattleOpened(BattleOpenedEvent event) {
         BattlePanel         bp;
         Battle              b;
+        final int           bid;
         
         b = new Battle();
         b.hasPass = event.isHasPass();
@@ -142,10 +146,11 @@ public class MultiplayerPanel extends Panel {
         bp.setParent(surface);
         ipanels.add(bp);
         
+        bid = b.id;
         bp.setCb(new BattlePanelCb() {
             @Override
             public void onMouseRelease(QMouseEvent event) {
-                System.out.printf("onMouseRelease!\n");
+                BattleRoomPanel.getInstance().joinBattle(bid);
             }
         });
         
@@ -267,8 +272,8 @@ public class MultiplayerPanel extends Panel {
     }
     
     private void resizeEvent(int w, int h) {
-        surface.move(0, 0);
-        surface.resize(w, h);
+        surface.move(0, surfaceY);
+        surface.resize(w, h - surfaceY);
         scrollbar.resize(20, surface.height());
         scrollbar.move(surface.width() - scrollbar.width(), 0);
         drawPanels();

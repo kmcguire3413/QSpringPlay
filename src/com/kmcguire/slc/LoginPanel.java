@@ -90,7 +90,7 @@ public class LoginPanel extends Panel {
     public void onLobbyAuthentication(AuthenticationEvent event) {
         event.setUser("kmcguire");
         event.setPass("tty5413413");
-        event.setClientVersion("SLC0.0.0");
+        event.setClientVersion("ZK 2.75.0.4.1273148089.a speb");
     }
     
     public void btnLoginClicked(boolean checked) {

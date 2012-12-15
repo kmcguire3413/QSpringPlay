@@ -90,7 +90,7 @@ public class MapManager implements Runnable {
                 raf.close();
                 img = new QPixmap();
                 img.loadFromData(bbuf);
-                System.out.printf("@@got image from cache for %s\n", mapName);
+                //System.out.printf("@@got image from cache for %s\n", mapName);
                 return img;                
             } catch (FileNotFoundException ex) {
                 System.out.printf("warning: could not access minimap in ~/qsl/miniMapCache/");
@@ -120,7 +120,7 @@ public class MapManager implements Runnable {
         
         url = String.format("http://zero-k.info/Resources/%s.minimap.jpg", mapName);
         
-        System.out.printf("fetching %s\n", mapName);
+        //System.out.printf("fetching %s\n", mapName);
         
         try {
             connection = new URL(url).openConnection();
@@ -134,7 +134,7 @@ public class MapManager implements Runnable {
                 bb.write(bbuf, 0, cnt);
             }
             
-            System.out.printf("fetch success %s\n", mapName);
+            //System.out.printf("fetch success %s\n", mapName);
             
             file = new File("~/qsl/miniMapCache/");
             
@@ -160,10 +160,10 @@ public class MapManager implements Runnable {
             img.loadFromData(bbuf);
             return img;
         } catch (MalformedURLException ex) {
-            System.out.printf("ex\n");
+            //System.out.printf("ex\n");
             return null;
         } catch (IOException ex) {
-            System.out.printf("ex\n");
+            //System.out.printf("ex\n");
             return null;
         }
     }
