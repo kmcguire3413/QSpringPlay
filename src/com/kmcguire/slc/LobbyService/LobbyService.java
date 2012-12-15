@@ -131,12 +131,24 @@ public class LobbyService {
         }
     }
     
+    public void sendBattleStatus(int status, int color) {
+        OutputStream        ostrm;
+        
+        try {
+            ostrm = socket.getOutputStream();
+            ostrm.write(String.format("MYBATTLESTATUS %d %d\n", status, color).getBytes());
+        } catch (IOException ex) {
+            callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
+            return;
+        }        
+    }
+    
     public void joinBattle(int id) {
         OutputStream        ostrm;
         
         try {
             ostrm = socket.getOutputStream();
-            ostrm.write(String.format("JOINBATTLE %d\n", id).getBytes());
+            ostrm.write(String.format("JOINBATTLE %d * 1904189322\n", id).getBytes());
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
