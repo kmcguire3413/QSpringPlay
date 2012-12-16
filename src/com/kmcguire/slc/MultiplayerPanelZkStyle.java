@@ -63,6 +63,9 @@ public class MultiplayerPanelZkStyle extends Panel {
     private QGridLayout                 gridLayout;
     private QWidget                     controls;
     
+    //
+    private String                      battleFilter;
+    
     // all panels
     private Set<BattlePanel>            panels;
     // panels created for only internal use
@@ -135,6 +138,12 @@ public class MultiplayerPanelZkStyle extends Panel {
         labelSearch.setText("Search:");
         labelSearch.show();
         
+        checkboxShowFull.stateChanged.connect(this, "checkboxChanged(int)");
+        checkboxShowPass.stateChanged.connect(this, "checkboxChanged(int)");
+        checkboxShowEmpty.stateChanged.connect(this, "checkboxChanged(int)");
+        lineditSearch.textChanged.connect(this, "searchChanged(String)");
+        battleFilter = "";
+        
         gridLayout = new QGridLayout();
         gridLayout.addWidget(checkboxShowEmpty, 0, 0);
         gridLayout.addWidget(checkboxShowFull, 0, 1);
@@ -156,6 +165,15 @@ public class MultiplayerPanelZkStyle extends Panel {
         drawPanels();
         
         mwin.getLobbyService().registerForEvents(this);
+    }
+    
+    public void checkboxChanged(int state) {
+        drawPanels();
+    }
+    
+    public void searchChanged(String text) {
+        battleFilter = text;
+        drawPanels();
     }
     
     /**
@@ -434,6 +452,7 @@ public class MultiplayerPanelZkStyle extends Panel {
         int         x;
         int         y;
         int         scrollMax;
+        Battle      b;
         
         colcnt = (int)((surface.width() - scrollbar.width()) / panelWidth);
         
@@ -456,10 +475,24 @@ public class MultiplayerPanelZkStyle extends Panel {
             x = colcur * panelWidth;
             y = yoffset + (rowcur * panelHeight);
             
-            bp.setParent(surface);
-            bp.move(x, y);
-            bp.show();
-            ++colcur;
+            b = battles.get(bp.getId());
+            
+            if (
+                    (b.players.size() > 0 || (b != null && b.players.isEmpty() && checkboxShowEmpty.isChecked())) &&
+                    ((b.players.size() < bp.getMaxPlayers()) || (b != null && b.players.size() == bp.getMaxPlayers() && checkboxShowFull.isChecked())) &&
+                    ((!bp.isHasPass()) || (bp.isHasPass() && checkboxShowPass.isChecked())) && 
+                    (battleFilter.length() < 1 ||
+                    bp.getTitle().indexOf(battleFilter) > -1 ||
+                    bp.getMod().indexOf(battleFilter) > -1 ||
+                    bp.getMap().indexOf(battleFilter) > -1)
+            ) {
+                bp.setParent(surface);
+                bp.move(x, y);
+                bp.show();
+                ++colcur;
+            } else {
+                bp.hide();
+            }
         }
     }
 }
