@@ -7,9 +7,11 @@ import com.kmcguire.slc.LobbyService.ClientsEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.JoinedBattleEvent;
 import com.kmcguire.slc.LobbyService.JoinedEvent;
+import com.kmcguire.slc.LobbyService.LeftBattleEvent;
 import com.kmcguire.slc.LobbyService.LeftEvent;
 import com.kmcguire.slc.LobbyService.LobbyService;
 import com.kmcguire.slc.LobbyService.RequestBattleStatusEvent;
+import com.kmcguire.slc.LobbyService.SaidBattleEvent;
 import com.kmcguire.slc.LobbyService.SaidEvent;
 import com.trolltech.qt.core.Qt;
 import com.trolltech.qt.gui.QIcon;
@@ -20,7 +22,9 @@ import com.trolltech.qt.gui.QPlainTextEdit;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QWidget;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is the main panel/widget for the current battle room. There can only
@@ -41,6 +45,7 @@ public class BattleRoomPanel extends Panel {
     private QWidget                        chatSurface;
     private LobbyService                   ls;
 
+    private Map<String, QListWidgetItem>   userToListWidget;
     
     public BattleRoomPanel(MainWindow mwin) throws LobbyGeneralException {
         if (instance != null) {
@@ -87,10 +92,17 @@ public class BattleRoomPanel extends Panel {
         mwin.getLobbyService().registerForEvents(this);
         
         ls = mwin.getLobbyService();
+        
+        userToListWidget = new HashMap<String, QListWidgetItem>();
     }
     
     public static BattleRoomPanel getInstance() {
         return instance;
+    }
+    
+    public static void joinBattle(int bid) {
+        getInstance().chat.appendPlainText(String.format("-!- joined battle %d", bid));
+        getInstance().mwin.getLobbyService().joinBattle(bid);
     }
     
     @EventHandler
@@ -108,19 +120,47 @@ public class BattleRoomPanel extends Panel {
     
     @EventHandler
     private void onJoinedBattle(JoinedBattleEvent event) {
-        //System.out.printf("user:%s\n", event.getUser());
+        QListWidgetItem         i;
+        
+        if (event.getId() == cbid) {
+            chat.appendPlainText(String.format("-!- %s has joined the battle", event.getUser()));
+            
+            i = new QListWidgetItem();
+            userToListWidget.put(event.getUser(), i);
+            
+            i.setText(event.getUser());
+            
+            users.addItem(i);
+        }
     }
+    
+    @EventHandler
+    private void onSaidBattle(SaidBattleEvent event) {
+        chat.appendHtml(String.format("<b>[</b>%s<b>]</b>: %s", event.getUser(), event.getMessage()));
+    }
+    
+    @EventHandler
+    private void onLeftBattle(LeftBattleEvent event) {
+        QListWidgetItem             i;
+        
+        if (event.getId() == cbid) {
+            chat.insertPlainText(String.format("-!- %s has left the battle", event.getUser()));
+            
+            i = userToListWidget.get(event.getUser());
+            users.removeItemWidget(i);
+        }        
+    }
+    
+    
     
     @EventHandler
     private void onClientBattleStatus(ClientBattleStatusEvent event) {
         
     }
     
-    public static void joinBattle(int bid) {
-        System.out.printf("joining %d\n", bid);
-
-        getInstance().mwin.getLobbyService().joinBattle(bid);
-    }
+    //public static void joinBattle(int bid) {
+    //    getInstance().mwin.getLobbyService().joinBattle(bid);
+    //}
     
     private void onEditBoxEnterPressed() {
         String          msg;
