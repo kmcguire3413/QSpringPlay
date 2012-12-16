@@ -14,6 +14,7 @@ import com.trolltech.qt.gui.QWidget;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -60,25 +61,32 @@ public class MultiplayerPanel extends Panel {
     private static final QPixmap        frameNormal;
     private static final QPixmap        frameBattle;
     
-    private static final int            panelWidth;
-    private static final int            panelHeight;
+    public static final int             panelWidth;
+    public static final int             panelHeight;
     private static final int            surfaceY;
+    
+    private static final QPixmap        person;
+    private static final QPixmap        noperson;
             
     static {
         panelWidth = 300;
-        panelHeight = 125;
+        panelHeight = 72;
         
         surfaceY = 50;
         
         frameNormal = new QPixmap();
         frameBattle = new QPixmap();
+        person = new QPixmap();
+        noperson = new QPixmap();
         
         try {
             frameNormal.loadFromData(SpringLobbyClient.loadResource("images/battleframenormal.png"));
             frameBattle.loadFromData(SpringLobbyClient.loadResource("images/battleframebattle.png"));
+            person.loadFromData(SpringLobbyClient.loadResource("images/person.png"));
+            noperson.loadFromData(SpringLobbyClient.loadResource("images/noperson.png"));
         } catch (IOException ex) {
             ex.printStackTrace();
-            System.out.printf("warning: was trying to load battle frame resources\n");
+            System.out.printf("warning: was trying to load resources\n");
         }
     }
     
@@ -142,9 +150,9 @@ public class MultiplayerPanel extends Panel {
         battles.put(b.id, b);
         
         // create a battle panel for this widget
-        bp = makeBattlePanel(event.getId());
+        bp = makeBattlePanel(event.getId(), true);
         bp.setParent(surface);
-        ipanels.add(bp);
+        bp.show();
         
         bid = b.id;
         bp.setCb(new BattlePanelCb() {
@@ -177,14 +185,84 @@ public class MultiplayerPanel extends Panel {
         battles.remove(event.getId());
     }
     
+    private BattlePanel getPanel(int bid) {
+        for (BattlePanel bp : ipanels) {
+            if (bp.getId() == bid) {
+                return bp;
+            }
+        }
+        
+        for (BattlePanel bp : panels) {
+            if (bp.getId() == bid) {
+                return bp;
+            }
+        }
+        return null;
+    }
+    
     @EventHandler
     private void onBattleUsersChanged(BattleUsersChangedEvent event) {
-        Battle          b;
+        onBattleUsersChanged(event.getBattleId(), event.getPlayers());
+    }
+    
+    private void onBattleUsersChanged(int bid, Set<String> playerList) {
+        Battle              b;
+        QLabel[]            spots;
+        BattlePanel         bp;
+        QLabel              spot;
+        final int           gx, gy;
+        final int           colcnt;
+        Iterator<String>    i;
+        String              user;
+        
         // update any battle panel for this battle
         
-        b = battles.get(event.getBattleId());
-        b.players = new HashSet(event.getPlayers());
+        b = battles.get(bid);
+        if (playerList == null) {
+            b.players = new HashSet<String>();
+        } else {
+            b.players = new HashSet(playerList);
+        }
         
+        // redo the player list for any battle panel representing this battle
+        bp = getPanel(b.id);
+        
+        // let it throw some errors at least we shall know
+        // that something is wrong
+        //if (bp == null) {
+        //    return;
+        //}
+        
+        
+        
+        gx = 72;
+        gy = 30;
+        colcnt = 13;
+        
+        spots = bp.getLabelPlayers();
+        i = b.players.iterator();
+        
+        for (int y = 0; y < 2; ++y) {
+            for (int x = 0; x < colcnt; ++x) {
+                if (y * colcnt + x >= spots.length) {
+                    break;
+                }
+                if (i.hasNext()) {
+                    user = i.next();
+                } else {
+                    user = null;
+                }
+                spot = spots[y * colcnt + x];
+                spot.move(gx + x * 16, gy + y * 17);
+                spot.resize(16, 17);
+                spot.show();
+                if (user == null) {
+                    spot.setPixmap(noperson);
+                } else {
+                    spot.setPixmap(person);
+                }
+            }
+        }
         
         drawPanels();
     }
@@ -241,6 +319,17 @@ public class MultiplayerPanel extends Panel {
            }
            bp.setCurMap(bp.getMap());
        }
+       
+       onBattleUsersChanged(b.id, b.players);
+    }
+    
+    /**
+     * This is the externally called service method.
+     * @param bid               the battle id (signed 32-bit integer)
+     * @return                  reference to a BattlePanel Qt widget
+     */
+    public BattlePanel makeBattlePanel(int bid) {
+        return makeBattlePanel(bid, false);
     }
     
     /**
@@ -250,7 +339,7 @@ public class MultiplayerPanel extends Panel {
      * @param bid               the battle ID
      * @return                  the battle panel QWidget reference
      */
-    public BattlePanel makeBattlePanel(int bid) {
+    private BattlePanel makeBattlePanel(int bid, boolean internal) {
         BattlePanel             bp;
         Battle                  b;
         
@@ -260,6 +349,11 @@ public class MultiplayerPanel extends Panel {
                 b.id, b.maxPlayers, b.hasPass, 
                 b.map, b.title, b.mod
         );
+        if (internal) {
+            ipanels.add(bp);
+        } else {
+            panels.add(bp);
+        }
         
         updateBattlePanel(bp);
         return bp;
@@ -318,6 +412,7 @@ public class MultiplayerPanel extends Panel {
             x = colcur * panelWidth;
             y = yoffset + (rowcur * panelHeight);
             
+            bp.setParent(surface);
             bp.move(x, y);
             bp.show();
             ++colcur;

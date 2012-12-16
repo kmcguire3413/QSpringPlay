@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MainWindow extends QWidget {
+public class MainWindow extends QWidget implements ProgramServices {
     private QTimer                  netTimer;
     private LobbyService            lobbyService;
     private QTabWidget              tabWidget;
@@ -94,6 +94,10 @@ public class MainWindow extends QWidget {
             System.out.printf("warning: could not create BattleRoomPanel.. do you have multiple MainWindow objects?");
             System.out.printf("warning: or maybe you have already created a BattleRoomPanel? only one can exist....");
         }
+    }
+    
+    public ProgramServices getProgramServices() {
+        return this;
     }
     
     public QIcon getFlagIcon(String code) {
