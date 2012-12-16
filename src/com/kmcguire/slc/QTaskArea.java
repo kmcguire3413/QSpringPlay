@@ -1,12 +1,13 @@
 package com.kmcguire.slc;
 
+import com.trolltech.qt.gui.QFrame;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QScrollBar;
 import com.trolltech.qt.gui.QWidget;
 import java.util.ArrayList;
 import java.util.List;
 
-public class QTaskArea extends QWidget {
+public class QTaskArea extends QFrame {
     List<QTaskPanel>            widgets;
     QWidget                     surface;
     QScrollBar                  scrollbar;
@@ -22,7 +23,10 @@ public class QTaskArea extends QWidget {
         
         resizeEvent(width(), height());
         
-        surface.setStyleSheet("background-color: #ff9999;");
+        this.setFrameShadow(Shadow.Raised);
+        this.setFrameShape(Shape.WinPanel);
+        
+        //surface.setStyleSheet("background-color: #ff9999;");
     }
     
     public void scrollbarChanged(int value) {

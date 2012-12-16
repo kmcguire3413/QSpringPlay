@@ -7,6 +7,7 @@ package com.kmcguire.slc;
 import com.kmcguire.slc.LobbyService.LobbyService;
 import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.gui.QLabel;
+import com.trolltech.qt.gui.QPushButton;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QWidget;
 
@@ -44,11 +45,19 @@ public class TaskPanelConnection extends QTaskPanel {
         lineBufSize = new QLabel(surface);
         lineBufSize.show();
         */
+        button = new QPushButton(surface);
+        button.show();
         
         resize(10, 40);
-        setStyleSheet("background-color: green;");
+        //setStyleSheet("background-color: green;");
+        
+        this.setFrameShadow(Shadow.Raised);
+        this.setFrameShape(Shape.WinPanel);
+        
+        tick();
     }
     
+    private QPushButton         button;
     private QLabel              bytesIn;
     private QLabel              bytesOut;
     private QLabel              eventsIn;
@@ -66,16 +75,19 @@ public class TaskPanelConnection extends QTaskPanel {
         // bytesIn, bytesOut, eventsIn, eventsUnhandled, linesIn, lineBufSize
         ls = services.getLobbyService();
         
-        bytesIn.move(0, 0);
         bytesIn.setText(
                 String.format("BytesIn: %d BytesOut:%d EventsIn:%d EventsUnhandled:%d LinesIn:%s LineBufSize:%d",
                 ls.getBytesIn(), ls.getBytesOut(), ls.getEventsIn(), ls.getEventsUnhandled(), ls.getLinesIn(), ls.getLineBufSize()
         ));
+        button.setText("Logout");
     }
     
     @Override
     public void resizeEvent(QResizeEvent event) {
         surface.resize(this.width(), this.height());
-        bytesIn.resize(surface.width(), surface.height());
+        bytesIn.move(10, 0);
+        bytesIn.resize(surface.width() - 75, surface.height());
+        button.move(surface.width() - 75, 5);
+        button.resize(70, 30);
     }
 }
