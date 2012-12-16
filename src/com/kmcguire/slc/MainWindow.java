@@ -87,7 +87,7 @@ public class MainWindow extends QWidget implements ProgramServices {
         vsplitter.show();       
         
         addPanel(new LoginPanel(this));
-        addPanel(new MultiplayerPanel(this));
+        addPanel(new MultiplayerPanelZkStyle(this));
         try {
             addPanel(new BattleRoomPanel(this));
         } catch (LobbyGeneralException ex) {

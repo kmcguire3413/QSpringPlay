@@ -179,7 +179,7 @@ public class BattlePanel extends QWidget {
             labelPlayers[x] = new QLabel(this);
         }
         
-        resize(MultiplayerPanel.panelWidth, MultiplayerPanel.panelHeight);
+        resize(MultiplayerPanelZkStyle.panelWidth, MultiplayerPanelZkStyle.panelHeight);
     }
     
     /**

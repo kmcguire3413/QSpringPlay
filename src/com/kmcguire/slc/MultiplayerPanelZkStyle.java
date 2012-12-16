@@ -5,7 +5,11 @@ import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
 import com.trolltech.qt.core.QTimer;
+import com.trolltech.qt.core.Qt.CheckState;
+import com.trolltech.qt.gui.QCheckBox;
+import com.trolltech.qt.gui.QGridLayout;
 import com.trolltech.qt.gui.QLabel;
+import com.trolltech.qt.gui.QLineEdit;
 import com.trolltech.qt.gui.QMouseEvent;
 import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QResizeEvent;
@@ -41,7 +45,7 @@ class MapUpdate {
     }
 }
 
-public class MultiplayerPanel extends Panel {
+public class MultiplayerPanelZkStyle extends Panel {
     private MainWindow                  mwin;
     private QWidget                     surface;
     private int                         yoffset;
@@ -50,6 +54,14 @@ public class MultiplayerPanel extends Panel {
     //
     private QTimer                      timer;
     private Set<MapUpdate>              mapUpdates;
+    //
+    private QCheckBox                   checkboxShowEmpty;
+    private QCheckBox                   checkboxShowFull;
+    private QCheckBox                   checkboxShowPass;
+    private QLineEdit                   lineditSearch;
+    private QLabel                      labelSearch;
+    private QGridLayout                 gridLayout;
+    private QWidget                     controls;
     
     // all panels
     private Set<BattlePanel>            panels;
@@ -90,7 +102,7 @@ public class MultiplayerPanel extends Panel {
         }
     }
     
-    public MultiplayerPanel(MainWindow _mwin) {
+    public MultiplayerPanelZkStyle(MainWindow _mwin) {
         mwin = _mwin;
     
         timer = new QTimer();
@@ -103,6 +115,36 @@ public class MultiplayerPanel extends Panel {
         ipanels = new HashSet<BattlePanel>();
         
         battles = new HashMap<Integer, Battle>();
+        
+        controls = new QWidget(this);
+        checkboxShowEmpty = new QCheckBox(controls);
+        checkboxShowEmpty.setText("Show Empty");
+        checkboxShowEmpty.setCheckState(CheckState.Checked);
+        checkboxShowEmpty.show();
+        checkboxShowFull = new QCheckBox(controls);
+        checkboxShowFull.setText("Show Full");
+        checkboxShowFull.setCheckState(CheckState.Checked);
+        checkboxShowFull.show();
+        checkboxShowPass = new QCheckBox(controls);
+        checkboxShowPass.setText("Password?");
+        checkboxShowPass.setCheckState(CheckState.Checked);
+        checkboxShowPass.show();
+        lineditSearch = new QLineEdit(controls);
+        lineditSearch.show();
+        labelSearch = new QLabel(controls);
+        labelSearch.setText("Search:");
+        labelSearch.show();
+        
+        gridLayout = new QGridLayout();
+        gridLayout.addWidget(checkboxShowEmpty, 0, 0);
+        gridLayout.addWidget(checkboxShowFull, 0, 1);
+        gridLayout.addWidget(checkboxShowPass, 0, 2);
+        gridLayout.addWidget(labelSearch, 0, 3);
+        gridLayout.addWidget(lineditSearch, 0, 4);
+        
+        controls.setLayout(gridLayout);
+        controls.show();
+        
         
         surface = new QWidget(this);
         
@@ -366,6 +408,8 @@ public class MultiplayerPanel extends Panel {
     }
     
     private void resizeEvent(int w, int h) {
+        controls.move(0, 0);
+        controls.resize(w, surfaceY);
         surface.move(0, surfaceY);
         surface.resize(w, h - surfaceY);
         scrollbar.resize(20, surface.height());
