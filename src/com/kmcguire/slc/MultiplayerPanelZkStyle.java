@@ -46,7 +46,7 @@ class MapUpdate {
 }
 
 public class MultiplayerPanelZkStyle extends Panel {
-    private MainWindow                  mwin;
+    private ProgramServices             services;
     private QWidget                     surface;
     private int                         yoffset;
     private QScrollBar                  scrollbar;
@@ -105,8 +105,8 @@ public class MultiplayerPanelZkStyle extends Panel {
         }
     }
     
-    public MultiplayerPanelZkStyle(MainWindow _mwin) {
-        mwin = _mwin;
+    public MultiplayerPanelZkStyle(ProgramServices _services) {
+        services = _services;
     
         timer = new QTimer();
         timer.timeout.connect(this, "checkMapFetched()");
@@ -164,7 +164,7 @@ public class MultiplayerPanelZkStyle extends Panel {
         
         drawPanels();
         
-        mwin.getLobbyService().registerForEvents(this);
+        services.getLobbyService().registerForEvents(this);
     }
     
     public void checkboxChanged(int state) {

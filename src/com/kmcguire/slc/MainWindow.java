@@ -96,6 +96,11 @@ public class MainWindow extends QWidget implements ProgramServices {
         }
     }
     
+    @Override
+    public QTaskArea getTaskArea() {
+        return taskArea;
+    }
+    
     public ProgramServices getProgramServices() {
         return this;
     }
@@ -173,11 +178,10 @@ public class MainWindow extends QWidget implements ProgramServices {
         
         if (lu != null) {
             lu.setBattleId(event.getId());
-            battleList.get(event.getId()).add(event.getUser());
-            
-            buce = new BattleUsersChangedEvent(event.getId(), battleList.get(event.getId()));
-            lobbyService.callEvent(buce);
-        }        
+        }
+        battleList.get(event.getId()).add(event.getUser());
+        buce = new BattleUsersChangedEvent(event.getId(), battleList.get(event.getId()));
+        lobbyService.callEvent(buce);        
     }
     
     @EventHandler

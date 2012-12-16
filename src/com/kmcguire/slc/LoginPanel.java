@@ -25,11 +25,14 @@ public class LoginPanel extends Panel {
     private QWidget                     smallBox;
     private QCheckBox                   chkRemember;
     private File                        pwfile;
-    private MainWindow                  mwin;
+    private ProgramServices             services;
+    private TaskPanelConnection         taskPanel;
     
-    public LoginPanel(MainWindow _mwin) {
+    public LoginPanel(ProgramServices _services) {
         
-        mwin = _mwin;
+        services = _services;
+        
+        taskPanel = new TaskPanelConnection(services);
         
         pwfile = new File("logininfo");
         
@@ -83,7 +86,7 @@ public class LoginPanel extends Panel {
         
         smallBox.setLayout(grid);
         
-        mwin.getLobbyService().registerForEvents(this);
+        services.getLobbyService().registerForEvents(this);
     }
 
     @EventHandler
@@ -96,21 +99,35 @@ public class LoginPanel extends Panel {
     public void btnLoginClicked(boolean checked) {
         RandomAccessFile        raf;
         
-        if (chkRemember.checkState() == CheckState.Checked) {
-            try {
-                raf = new RandomAccessFile(pwfile, "rw");
-                raf.write(String.format("%s:%s", editUsername.text(), editPassword.text()).getBytes());
-                raf.close();
-            } catch (FileNotFoundException ex) {
-            } catch (IOException ex) {
-            }
+        if (btnLogin.text().equals("Logout")) {
+            chkRemember.setEnabled(false);
+            btnLogin.setText("Login");
+            editPassword.setEnabled(false);
+            editUsername.setEnabled(false);     
+            services.getLobbyService().disconnect();
         } else {
-            if (pwfile.exists()) {
-                pwfile.delete();
-            }
-        }
         
-        mwin.getLobbyService().setDoConnect(true);
+            if (chkRemember.checkState() == CheckState.Checked) {
+                try {
+                    raf = new RandomAccessFile(pwfile, "rw");
+                    raf.write(String.format("%s:%s", editUsername.text(), editPassword.text()).getBytes());
+                    raf.close();
+                } catch (FileNotFoundException ex) {
+                } catch (IOException ex) {
+                }
+            } else {
+                if (pwfile.exists()) {
+                    pwfile.delete();
+                }
+            }
+            
+            services.getTaskArea().addWidget(taskPanel);
+            chkRemember.setEnabled(false);
+            btnLogin.setText("Logout");
+            editPassword.setEnabled(false);
+            editUsername.setEnabled(false);
+            services.getLobbyService().setDoConnect(true);
+        }
     }
     
     @Override

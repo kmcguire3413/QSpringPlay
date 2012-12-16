@@ -7,14 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class QTaskArea extends QWidget {
-    List<QWidget>               widgets;
+    List<QTaskPanel>            widgets;
     QWidget                     surface;
     QScrollBar                  scrollbar;
     
     public QTaskArea() {
         super();
         
-        widgets = new ArrayList<QWidget>();
+        widgets = new ArrayList<QTaskPanel>();
         surface = new QWidget(this);
         scrollbar = new QScrollBar(this);
         
@@ -35,9 +35,12 @@ public class QTaskArea extends QWidget {
         }
     }
     
-    public void addWidget(QWidget widget) {
+    public void addWidget(QTaskPanel widget) {
         widget.setParent(this);
         widgets.add(widget);
+        widget.resize(width() - scrollbar.width(), widget.height());
+        widget.show();
+        scrollbarChanged(scrollbar.value());
     }
     
     private void resizeEvent(int w, int h) {

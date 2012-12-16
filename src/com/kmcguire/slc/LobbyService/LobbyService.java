@@ -27,7 +27,52 @@ public class LobbyService {
     private boolean             hasAuthenticated;
     private Set<Object>         eventHandlers;
     private boolean             doConnect;
+    //
+    private long                bytesIn;
+    private long                bytesOut;
+    private long                eventsIn;
+    private long                eventsUnhandled;
+    private long                linesIn;
+    private long                lineBufSize;
 
+    public long getBytesIn() {
+        return bytesIn;
+    }
+
+    public long getBytesOut() {
+        return bytesOut;
+    }
+
+    public long getEventsIn() {
+        return eventsIn;
+    }
+
+    public long getEventsUnhandled() {
+        return eventsUnhandled;
+    }
+
+    public long getLineBufSize() {
+        return lineBufSize;
+    }
+
+    public long getLinesIn() {
+        return linesIn;
+    }
+    
+    private void resetStats() {
+        bytesIn = 0;
+        bytesOut = 0;
+        eventsIn = 0;
+        linesIn = 0;
+        lineBufSize = 0;
+        eventsUnhandled = 0;
+    }
+    
+    private void write(OutputStream ostrm, byte[] data) throws IOException {
+        bytesOut += data.length;
+        ostrm.write(data);
+    }
+    
     public boolean isDoConnect() {
         return doConnect;
     }
@@ -124,7 +169,7 @@ public class LobbyService {
         
         try {
             ostrm = socket.getOutputStream();
-            ostrm.write(String.format("SAYBATTLE %s\n", message).getBytes());
+            write(ostrm, String.format("SAYBATTLE %s\n", message).getBytes());
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
@@ -136,7 +181,7 @@ public class LobbyService {
         
         try {
             ostrm = socket.getOutputStream();
-            ostrm.write(String.format("MYBATTLESTATUS %d %d\n", status, color).getBytes());
+            write(ostrm, String.format("MYBATTLESTATUS %d %d\n", status, color).getBytes());
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
@@ -148,7 +193,7 @@ public class LobbyService {
         
         try {
             ostrm = socket.getOutputStream();
-            ostrm.write(String.format("JOINBATTLE %d * 1904189322\n", id).getBytes());
+            write(ostrm, String.format("JOINBATTLE %d * 1904189322\n", id).getBytes());
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
@@ -160,11 +205,26 @@ public class LobbyService {
         
         try {
             ostrm = socket.getOutputStream();
-            ostrm.write(String.format("SAY %s %s\n", channel, message).getBytes());
+            write(ostrm, String.format("SAY %s %s\n", channel, message).getBytes());
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
         }                
+    }
+
+    public void disconnect() {
+        OutputStream        ostrm;
+        
+        try {
+            ostrm = socket.getOutputStream();
+            write(ostrm, "QUIT\n".getBytes());
+            ostrm.flush();
+            socket.close();
+            doConnect = false;
+        } catch (IOException ex) {
+            callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
+            return;
+        }        
     }
     
     public void joinChannel(String channel) {
@@ -172,7 +232,7 @@ public class LobbyService {
         
         try {
             ostrm = socket.getOutputStream();
-            ostrm.write(String.format("JOIN %s\n", channel).getBytes());
+            write(ostrm, String.format("JOIN %s\n", channel).getBytes());
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
@@ -200,7 +260,7 @@ public class LobbyService {
             ostrm = socket.getOutputStream();
             
             // LOGIN user passhash 2194 localip clientversion
-            ostrm.write(String.format("LOGIN %s %s 2194 %s %s\n", 
+            write(ostrm, String.format("LOGIN %s %s 2194 %s %s\n", 
                     event.getUser(), getPasswordHash(event.getPass()),
                     localIp, event.getClientVersion()
             ).getBytes());
@@ -304,9 +364,13 @@ public class LobbyService {
             event = new SaidEvent(nm.getWordParam(), nm.getWordParam(), nm.getRemaining());
         }
         
+        ++eventsIn;
+        
         if (event != null) {
+            //System.out.printf("event:%s\n", event.getClass().getName());
             callEvent(event);
         } else {
+            ++eventsUnhandled;
             System.out.printf("unhandled:[%s]\n", line);
         }
     }
@@ -333,6 +397,7 @@ public class LobbyService {
                         buf.get();
                         buf.compact();
                         buf.flip();
+                        ++linesIn;
                         processLine(lbuf);
                         break;
                     }
@@ -341,6 +406,8 @@ public class LobbyService {
             
             buf.position(buf.limit());
             buf.limit(buf.capacity());
+            
+            lineBufSize = buf.position();
     }
     
     /**
@@ -373,6 +440,8 @@ public class LobbyService {
         if (!socket.isConnected()) {
             InetAddress         ina;
             InetSocketAddress   sa;
+            
+            resetStats();
             
             hasAuthenticated = false;
             
@@ -412,6 +481,8 @@ public class LobbyService {
 
                 lbuf = new byte[a];
 
+                bytesIn += a;
+                
                 istrm.read(lbuf);            
                 buf.put(lbuf);   
 
