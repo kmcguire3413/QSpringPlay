@@ -47,6 +47,13 @@ public class QTaskArea extends QFrame {
         scrollbarChanged(scrollbar.value());
     }
     
+    public void remWidget(QTaskPanel widget) {
+        widgets.remove(widget);
+        widget.hide();
+        widget.setParent(null);
+        scrollbarChanged(scrollbar.value());
+    }
+    
     private void resizeEvent(int w, int h) {
         int     th;
         

@@ -32,7 +32,7 @@ public class LoginPanel extends Panel {
         
         services = _services;
         
-        taskPanel = new TaskPanelConnection(services);
+        taskPanel = new TaskPanelConnection(services, this);
         
         pwfile = new File("logininfo");
         
@@ -96,15 +96,23 @@ public class LoginPanel extends Panel {
         event.setClientVersion("ZK 2.75.0.4.1273148089.a speb");
     }
     
+    /**
+     * This method can create the connection or break the connection. It also
+     * handles placing the task widget into the task area and removing it. The
+     * task widget (TaskPanelConnection) also calls this method directly which
+     * simulates the pushing of this button.
+     * @param checked               this parameter is unused
+     */
     public void btnLoginClicked(boolean checked) {
         RandomAccessFile        raf;
         
         if (btnLogin.text().equals("Logout")) {
-            chkRemember.setEnabled(false);
+            chkRemember.setEnabled(true);
             btnLogin.setText("Login");
-            editPassword.setEnabled(false);
-            editUsername.setEnabled(false);     
-            services.getLobbyService().disconnect();
+            editPassword.setEnabled(true);
+            editUsername.setEnabled(true);     
+            services.getLobbyService().logout();
+            services.getTaskArea().remWidget(taskPanel);
         } else {
         
             if (chkRemember.checkState() == CheckState.Checked) {
@@ -126,7 +134,7 @@ public class LoginPanel extends Panel {
             btnLogin.setText("Logout");
             editPassword.setEnabled(false);
             editUsername.setEnabled(false);
-            services.getLobbyService().setDoConnect(true);
+            services.getLobbyService().login();
         }
     }
     

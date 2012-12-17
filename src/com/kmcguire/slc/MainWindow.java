@@ -34,13 +34,19 @@ public class MainWindow extends QWidget implements ProgramServices {
     private QTaskArea               taskArea;
     
     private Map<String, LobbyUser>          users;
-    private Map<Integer, Set<String>>       battleList;    
+    private Map<Integer, Set<String>>       battleList;
+    // this is used to track chat panel widgets so during a disconnect
+    // and a reconnect we do not recreate them if they already exist
+    // which they will because the user might want to read the history
+    private HashMap<String, ChatPanel>      chatPanels;
     
     private Map<String, QIcon>              flagIcons;
     
     public MainWindow() {
         users = new HashMap<String, LobbyUser>();
         battleList = new HashMap<Integer, Set<String>>();
+        
+        chatPanels = new HashMap<String, ChatPanel>();
         
         netTimer = new QTimer();
         netTimer.setSingleShot(false);
@@ -236,19 +242,31 @@ public class MainWindow extends QWidget implements ProgramServices {
         battleList.remove(event.getId());
     }
     
+    /**
+     * This happens we you join a channel and we check if we have already
+     * created a chat channel for it and if it exists then we just
+     * drop out of the method.
+     * @param event 
+     */
     @EventHandler
     private void onJoin(JoinEvent event) {
         ChatPanel           cp;
-        QWidget             w;
-
-        //w = new QWidget();
-        //w.setStyleSheet("background-color: #ffff00;");
-
+        
+        cp = chatPanels.get(event.getChannel());
+        
+        /*
+         * If we already have a chat panel then it is already registered
+         * with the lobby service since we do not reinstance the lobby
+         * service. So lets just silenty drop this and not create another
+         * chat tab for this channel.
+         */
+        if (cp != null) {
+            return;
+        }
+        
         cp = new ChatPanel(this, event.getChannel());
-        //cp.setStyleSheet("background-color: #ffff00;");
-
         tabWidget.addTab(cp, cp.getTitle());
-        //tabWidget.addTab(cp, "ChatPanel");
+        chatPanels.put(event.getChannel(), cp);
     }
     
     @EventHandler

@@ -5,21 +5,18 @@ import com.kmcguire.slc.LobbyService.ClientsEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
 import com.kmcguire.slc.LobbyService.JoinedEvent;
 import com.kmcguire.slc.LobbyService.LeftEvent;
+import com.kmcguire.slc.LobbyService.LogoutEvent;
 import com.kmcguire.slc.LobbyService.SaidEvent;
 import com.trolltech.qt.core.Qt;
 import com.trolltech.qt.gui.QIcon;
 import com.trolltech.qt.gui.QLineEdit;
 import com.trolltech.qt.gui.QListWidget;
 import com.trolltech.qt.gui.QListWidgetItem;
-import com.trolltech.qt.gui.QPixmap;
 import com.trolltech.qt.gui.QPlainTextEdit;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QSplitter;
 import com.trolltech.qt.gui.QWidget;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ChatPanel extends Panel {
     private String                         channel;
@@ -76,6 +73,10 @@ public class ChatPanel extends Panel {
         mwin.getLobbyService().registerForEvents(this);
     }
     
+    /**
+     * This will send a message to the channel that this chat panel
+     * represents using the lobby service.
+     */
     private void onEditBoxEnterPressed() {
         String          msg;
         
@@ -84,7 +85,23 @@ public class ChatPanel extends Panel {
         
         mwin.getLobbyService().sayChannel(channel, msg);
     }
-        
+    
+    /**
+     * If the lobby service is logged out, or disconnects then we need
+     * to clear the users otherwise we will end up re-populating it with
+     * a bunch of duplicates.
+     * @see                     onClients event handler method
+     * @param event             can be null
+     */
+    @EventHandler
+    private void onLogout(LogoutEvent event) {
+        users.clear();
+    }
+    
+    /**
+     * This will populate the users list during joining of the channel.
+     * @param event             must not be null and must be valid
+     */
     @EventHandler
     private void onClients(ClientsEvent event) {
         QListWidgetItem         item;
@@ -104,6 +121,11 @@ public class ChatPanel extends Panel {
         }
     }
     
+    /**
+     * This is called when a new user joins the channel and we are already
+     * in the channel.
+     * @param event             must be valid and not null
+     */
     @EventHandler
     private void onJoined(JoinedEvent event) {
         if (event.getChannel().equals(channel)) {
@@ -111,6 +133,10 @@ public class ChatPanel extends Panel {
         }
     }
     
+    /**
+     * This is called when a user leaves the channel that we are still in.
+     * @param event 
+     */
     @EventHandler
     private void onLeft(LeftEvent event) {
         QListWidgetItem         item;

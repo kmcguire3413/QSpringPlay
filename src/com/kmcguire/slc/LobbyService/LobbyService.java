@@ -76,9 +76,9 @@ public class LobbyService {
     public boolean isDoConnect() {
         return doConnect;
     }
-
-    public void setDoConnect(boolean doConnect) {
-        this.doConnect = doConnect;
+    
+    public void login() {
+        doConnect = true;
     }
     
     public LobbyService() {
@@ -212,7 +212,7 @@ public class LobbyService {
         }                
     }
 
-    public void disconnect() {
+    public void logout() {
         OutputStream        ostrm;
         
         try {
@@ -220,7 +220,18 @@ public class LobbyService {
             write(ostrm, "QUIT\n".getBytes());
             ostrm.flush();
             socket.close();
+            callEvent(new LogoutEvent());
             doConnect = false;
+            /*
+             * I reset stats here then also in the tick method when doConnect
+             * is set to false like I am doing above, but the problem is that
+             * the tick method is not synchrnous with this meaning we could
+             * reconnect and therefore not reset the stats so this just ensures
+             * that we reset them. Also the connection can be terminated (logout)
+             * by manually setting doConnect to false and not calling this function
+             * but that is not supported.
+             */
+            resetStats();
         } catch (IOException ex) {
             callEvent(new NetworkErrorEvent(String.format("A IO exception occured creating the socket and connecting it.")));
             return;
@@ -428,11 +439,14 @@ public class LobbyService {
         if (!doConnect) {
             if (socket.isConnected()) {
                 try {
+                    System.out.printf("closing connection\n");
                     socket.close();
+                    socket = new Socket();
                 } catch (IOException ex) {
                     callEvent(new NetworkErrorEvent(String.format("A IO exception occured closing the socket.")));    
                 }
             }
+            System.out.printf("idle\n");
             return;
         }
         
@@ -440,6 +454,8 @@ public class LobbyService {
         if (!socket.isConnected()) {
             InetAddress         ina;
             InetSocketAddress   sa;
+            
+            System.out.printf("trying to connect!\n");
             
             resetStats();
             

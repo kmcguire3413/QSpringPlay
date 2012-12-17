@@ -20,9 +20,11 @@ public class TaskPanelConnection extends QTaskPanel {
     private ProgramServices             services;
     private QWidget                     surface;
     private QTimer                      timer;
+    private LoginPanel                  loginPanel;
     
-    public TaskPanelConnection(ProgramServices _services) {
-        services = _services;
+    public TaskPanelConnection(ProgramServices services, LoginPanel loginPanel) {
+        this.loginPanel = loginPanel;
+        this.services = services;
         surface = new QWidget(this);
         
         timer = new QTimer();
@@ -48,6 +50,7 @@ public class TaskPanelConnection extends QTaskPanel {
         button = new QPushButton(surface);
         button.show();
         
+        button.clicked.connect(this, "btnLogout(boolean)");
         resize(10, 40);
         //setStyleSheet("background-color: green;");
         
@@ -64,6 +67,10 @@ public class TaskPanelConnection extends QTaskPanel {
     private QLabel              eventsUnhandled;
     private QLabel              linesIn;
     private QLabel              lineBufSize;
+    
+    public void btnLogout(boolean checked) {
+        loginPanel.btnLoginClicked(false);
+    }
     
     /**
      * This is called by the QTimer so we can poll and 
