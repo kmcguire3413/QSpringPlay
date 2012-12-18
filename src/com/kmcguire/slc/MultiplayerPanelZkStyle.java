@@ -23,18 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-class Battle {
-    public int          id;
-    public int          maxPlayers;
-    public boolean      hasPass;
-    public String       map;            // changable
-    public String       title;
-    public String       mod;
-    public Set<String>  players;
-    public int          cntSpecs;          // changable
-}
-
-
 class MapUpdate {
     public QPixmap             image;
     public QLabel              label;
@@ -70,8 +58,6 @@ public class MultiplayerPanelZkStyle extends Panel {
     private Set<BattlePanel>            panels;
     // panels created for only internal use
     private Set<BattlePanel>            ipanels;
-    // tracks all battles and information
-    private Map<Integer, Battle>        battles;
     
     private static final QPixmap        frameNormal;
     private static final QPixmap        frameBattle;
@@ -132,8 +118,6 @@ public class MultiplayerPanelZkStyle extends Panel {
         
         panels = new HashSet<BattlePanel>();
         ipanels = new HashSet<BattlePanel>();
-        
-        battles = new HashMap<Integer, Battle>();
         
         controls = new QWidget(this);
         checkboxShowEmpty = new QCheckBox(controls);
@@ -213,24 +197,14 @@ public class MultiplayerPanelZkStyle extends Panel {
     @EventHandler
     private void onBattleOpened(BattleOpenedEvent event) {
         BattlePanel         bp;
-        Battle              b;
         final int           bid;
-        
-        b = new Battle();
-        b.hasPass = event.isHasPass();
-        b.id = event.getId();
-        b.map = event.getMap();
-        b.maxPlayers = event.getMaxPlayers();
-        b.mod = event.getMod();
-        b.title = event.getTitle();
-        battles.put(b.id, b);
         
         // create a battle panel for this widget
         bp = makeBattlePanel(event.getId(), true);
         bp.setParent(surface);
         bp.show();
         
-        bid = b.id;
+        bid = event.getId();
         bp.setCb(new BattlePanelCb() {
             @Override
             public void onMouseRelease(QMouseEvent event) {
@@ -255,10 +229,7 @@ public class MultiplayerPanelZkStyle extends Panel {
                 bp.setParent(null);
                 break;
             }
-        }
-        
-        // update the internal tracking of battles
-        battles.remove(event.getId());
+        }        
     }
     
     private BattlePanel getPanel(int bid) {
@@ -293,15 +264,16 @@ public class MultiplayerPanelZkStyle extends Panel {
         
         // update any battle panel for this battle
         
-        b = battles.get(bid);
+        b = services.getBattleInfo(bid);
+        
         if (playerList == null) {
-            b.players = new HashSet<String>();
+            b.setPlayers(new HashSet<String>());
         } else {
-            b.players = new HashSet(playerList);
+            b.setPlayers(new HashSet(playerList));
         }
         
         // redo the player list for any battle panel representing this battle
-        bp = getPanel(b.id);
+        bp = getPanel(b.getId());
         
         // let it throw some errors at least we shall know
         // that something is wrong
@@ -316,7 +288,7 @@ public class MultiplayerPanelZkStyle extends Panel {
         colcnt = 13;
         
         spots = bp.getLabelPlayers();
-        i = b.players.iterator();
+        i = b.getPlayers().iterator();
         
         for (int y = 0; y < 2; ++y) {
             for (int x = 0; x < colcnt; ++x) {
@@ -345,13 +317,6 @@ public class MultiplayerPanelZkStyle extends Panel {
     
     @EventHandler
     private void onUpdateBattleInfo(UpdateBattleInfoEvent event) {
-        // update any battle panel for this battle
-        Battle          b;
-        
-        b = battles.get(event.getId());
-        b.hasPass = event.isHasPass();
-        b.map = event.getMap();
-        
         drawPanels();
     }
     
@@ -361,14 +326,14 @@ public class MultiplayerPanelZkStyle extends Panel {
        final QLabel     labelMap;
        QPixmap          image;
        
-       b = battles.get(bp.getId());
+       b = services.getBattleInfo(bp.getId());
        
        label = bp.getLabelTitle();
-       label.setText(b.title);
+       label.setText(b.getTitle());
        label.move(72, 0);
        label.show();
        label = bp.getLabelModMap();
-       label.setText(String.format("%s [%s]", b.mod, b.map));
+       label.setText(String.format("%s [%s]", b.getMod(), b.getMap()));
        label.move(72, 15);
        label.show();
        label = bp.getLabelFrame();
@@ -396,7 +361,7 @@ public class MultiplayerPanelZkStyle extends Panel {
            bp.setCurMap(bp.getMap());
        }
        
-       onBattleUsersChanged(b.id, b.players);
+       onBattleUsersChanged(b.getId(), b.getPlayers());
     }
     
     /**
@@ -419,11 +384,11 @@ public class MultiplayerPanelZkStyle extends Panel {
         BattlePanel             bp;
         Battle                  b;
         
-        b = battles.get(bid);
+        b = services.getBattleInfo(bid);
         // id, maxPayers, hasPass, map, title, mod
         bp = new BattlePanel(
-                b.id, b.maxPlayers, b.hasPass, 
-                b.map, b.title, b.mod
+                b.getId(), b.getMaxPlayers(), b.isHasPass(), 
+                b.getMap(), b.getTitle(), b.getMod()
         );
         if (internal) {
             ipanels.add(bp);
@@ -508,11 +473,11 @@ public class MultiplayerPanelZkStyle extends Panel {
             x = colcur * panelWidth;
             y = yoffset + (rowcur * panelHeight);
             
-            b = battles.get(bp.getId());
+            b = services.getBattleInfo(bp.getId());
             
             if (
-                    (b.players.size() > 0 || (b != null && b.players.isEmpty() && checkboxShowEmpty.isChecked())) &&
-                    ((b.players.size() < bp.getMaxPlayers()) || (b != null && b.players.size() == bp.getMaxPlayers() && checkboxShowFull.isChecked())) &&
+                    (b.getPlayers().size() > 0 || (b != null && b.getPlayers().isEmpty() && checkboxShowEmpty.isChecked())) &&
+                    ((b.getPlayers().size() < bp.getMaxPlayers()) || (b != null && b.getPlayers().size() == bp.getMaxPlayers() && checkboxShowFull.isChecked())) &&
                     ((!bp.isHasPass()) || (bp.isHasPass() && checkboxShowPass.isChecked())) && 
                     (battleFilter.length() < 1 ||
                     bp.getTitle().indexOf(battleFilter) > -1 ||

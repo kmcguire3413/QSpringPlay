@@ -15,6 +15,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.codec.binary.Base64;
@@ -115,8 +118,22 @@ public class LobbyService {
      * @param event             event to pass to the handlers
      */
     public void callEvent(Event event) {
+        class Pair {
+            Method          m;
+            Object          o;
+            int             p;
+        }
+        
         Class[]         args;
         Object[]        _eventHandlers;
+        Set<Pair>       calls;
+        Pair            pair;
+        EventPriority   ep;
+        Iterator<Pair>  i;
+        Pair            hp;
+        int             hv;
+        
+        calls = new HashSet<Pair>();
         
         _eventHandlers = eventHandlers.toArray();
         
@@ -126,18 +143,39 @@ public class LobbyService {
                     args = m.getParameterTypes();
                     if (args.length == 1) {
                         if (args[0] == event.getClass()) {
-                            try {
-                                m.setAccessible(true);
-                                m.invoke(o, event);
-                            } catch (IllegalAccessException ex) {
-                                ex.printStackTrace();
-                            } catch (InvocationTargetException ex) {
-                                ex.printStackTrace();
-                            }
+                            pair = new Pair();
+                            ep = m.getAnnotation(EventHandler.class).priority();
+                            pair.p = ep.getSlot();
+                            pair.m = m;
+                            pair.o = o;
+                            calls.add(pair);
                         }
                     }
                 }
             }
+        }
+        
+        while (calls.size() > 0) {
+            hv = -1;
+            hp = null;
+            i = calls.iterator();
+            for (Pair _pair : calls) {
+                _pair = i.next();
+                if (_pair.p > hv) {
+                    hv = _pair.p;
+                    hp = _pair;
+                }
+            }
+            calls.remove(hp);
+            try {
+                hp.m.setAccessible(true);
+                hp.m.invoke(hp.o, event);
+            } catch (IllegalAccessException ex) {
+                ex.printStackTrace();
+            } catch (InvocationTargetException ex) {
+                ex.printStackTrace();
+            }
+            //
         }
     }
     

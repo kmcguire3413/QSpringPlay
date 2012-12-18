@@ -5,6 +5,7 @@ import com.kmcguire.slc.LobbyService.BattleClosedEvent;
 import com.kmcguire.slc.LobbyService.BattleOpenedEvent;
 import com.kmcguire.slc.LobbyService.ClientStatusEvent;
 import com.kmcguire.slc.LobbyService.EventHandler;
+import com.kmcguire.slc.LobbyService.EventPriority;
 import com.kmcguire.slc.LobbyService.JoinEvent;
 import com.kmcguire.slc.LobbyService.JoinFailedEvent;
 import com.kmcguire.slc.LobbyService.JoinedBattleEvent;
@@ -12,6 +13,7 @@ import com.kmcguire.slc.LobbyService.LeftBattleEvent;
 import com.kmcguire.slc.LobbyService.LobbyService;
 import com.kmcguire.slc.LobbyService.LoginInfoEndEvent;
 import com.kmcguire.slc.LobbyService.RemoveUserEvent;
+import com.kmcguire.slc.LobbyService.UpdateBattleInfoEvent;
 import com.trolltech.qt.core.QTimer;
 import com.trolltech.qt.core.Qt;
 import com.trolltech.qt.gui.QIcon;
@@ -39,6 +41,9 @@ public class MainWindow extends QWidget implements ProgramServices {
     // and a reconnect we do not recreate them if they already exist
     // which they will because the user might want to read the history
     private HashMap<String, ChatPanel>      chatPanels;
+    
+    // tracks all battles and information
+    private Map<Integer, Battle>        battles;    
     
     private Map<String, QIcon>              flagIcons;
     
@@ -68,25 +73,7 @@ public class MainWindow extends QWidget implements ProgramServices {
         
         flagIcons = new HashMap<String, QIcon>();
         
-        /*
-        QWidget     a, b, c;
-        
-        a = new QWidget();
-        b = new QWidget();
-        c = new QWidget();
-        
-        a.setStyleSheet("background-color: #99ff99;");
-        b.setStyleSheet("background-color: #9999ff;");
-        c.setStyleSheet("background-color: #99ffff;");
-        
-        a.resize(50, 25);
-        b.resize(50, 25);
-        c.resize(50, 25);
-        
-        taskArea.addWidget(a);
-        taskArea.addWidget(b);
-        taskArea.addWidget(c);
-        */
+        battles = new HashMap<Integer, Battle>();
         
         vsplitter.addWidget(tabWidget);
         vsplitter.addWidget(taskArea);
@@ -101,6 +88,57 @@ public class MainWindow extends QWidget implements ProgramServices {
             System.out.printf("warning: or maybe you have already created a BattleRoomPanel? only one can exist....");
         }
     }
+    
+    /*
+     * This section holds the battle information reflection.
+     */
+    
+    public Battle getBattleInfo(int bid) {
+        return battles.get(bid);
+    }
+    
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onBattleClosed(BattleClosedEvent event) {   
+        // update the internal tracking of battles
+        battles.remove(event.getId());
+        
+        for (String user : battleList.get(event.getId())) {
+            users.get(user).setBattleId(-1);
+        }
+        
+        battleList.remove(event.getId());        
+    }    
+    
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onBattleOpened(BattleOpenedEvent event) {
+        BattlePanel         bp;
+        Battle              b;
+        final int           bid;
+        
+        b = new Battle();
+        b.setHasPass(event.isHasPass());
+        b.setId(event.getId());
+        b.setMap(event.getMap());
+        b.setMaxPlayers(event.getMaxPlayers());
+        b.setMod(event.getMod());
+        b.setTitle(event.getTitle());
+        battles.put(event.getId(), b);
+        
+        // TODO: do i really need this or can I integrate it into Battle?
+        battleList.put(event.getId(), new HashSet<String>());        
+    }
+    
+    @EventHandler(priority = EventPriority.HIGH)
+    private void onUpdateBattleInfo(UpdateBattleInfoEvent event) {
+        // update any battle panel for this battle
+        Battle          b;
+        
+        b = battles.get(event.getId());
+        b.setHasPass(event.isHasPass());
+        b.setMap(event.getMap());
+    }
+    
+    /* ------------------- */
     
     @Override
     public QTaskArea getTaskArea() {
@@ -221,27 +259,7 @@ public class MainWindow extends QWidget implements ProgramServices {
     public void resizeEvent(QResizeEvent event) {
         vsplitter.resize(this.width(), this.height());
     }
-    
-    @EventHandler
-    private void onBattleOpened(BattleOpenedEvent event) {
-        battleList.put(event.getId(), new HashSet<String>());
-        
-        //if (event.getTitle().indexOf("Newbies") > -1) {
-            //lobbyService.joinBattle(event.getId());
-        //}
-    }
-    
-    @EventHandler
-    private void onBattleClosed(BattleClosedEvent event) {
-        // just to make sure let us set all users known to be
-        // in this battle to -1 just to be on the safe side
-        for (String user : battleList.get(event.getId())) {
-            users.get(user).setBattleId(-1);
-        }
-        
-        battleList.remove(event.getId());
-    }
-    
+       
     /**
      * This happens we you join a channel and we check if we have already
      * created a chat channel for it and if it exists then we just

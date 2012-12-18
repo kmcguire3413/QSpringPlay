@@ -19,4 +19,5 @@ public interface ProgramServices {
     public LobbyService getLobbyService();
     public void addPanel(Panel panel);
     public QTaskArea getTaskArea();
+    public Battle getBattleInfo(int bid);
 }
