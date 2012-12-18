@@ -82,10 +82,14 @@ public class MultiplayerPanelZkStyle extends Panel {
     
     private static final QPixmap        person;
     private static final QPixmap        noperson;
-            
+    
+    private static MultiplayerPanelZkStyle        instance;
+    
     static {
         panelWidth = 300;
         panelHeight = 72;
+        
+        instance = null;
         
         surfaceY = 50;
         
@@ -105,7 +109,19 @@ public class MultiplayerPanelZkStyle extends Panel {
         }
     }
     
-    public MultiplayerPanelZkStyle(ProgramServices _services) {
+    public static MultiplayerPanelZkStyle getInstance() {
+        return instance;
+    }
+    
+    public static MultiplayerPanelZkStyle createInstance(ProgramServices services) {
+        if (instance == null) {
+            instance = new MultiplayerPanelZkStyle(services);
+        }
+        
+        return instance;
+    }
+    
+    private MultiplayerPanelZkStyle(ProgramServices _services) {
         services = _services;
     
         timer = new QTimer();
@@ -419,6 +435,23 @@ public class MultiplayerPanelZkStyle extends Panel {
         return bp;
     }
     
+    /**
+     * There needed to exist a way to ensure the battle panel is
+     * properly destroyed and garbage collected. I may want to come
+     * back and use some type of weak reference containers for ipanels
+     * and panels, but I have never done that so just code it later.
+     */
+    public void destroyBattlePanel(BattlePanel bp) {
+        if (ipanels.contains(bp)) {
+            ipanels.remove(bp);
+        }
+        
+        if (panels.contains(bp)) {
+            panels.remove(bp);
+        }
+        
+        bp.setParent(null);
+    }
     
     @Override
     public String getTitle() {

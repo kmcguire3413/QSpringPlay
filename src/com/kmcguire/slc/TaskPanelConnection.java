@@ -54,8 +54,8 @@ public class TaskPanelConnection extends QTaskPanel {
         resize(10, 40);
         //setStyleSheet("background-color: green;");
         
-        this.setFrameShadow(Shadow.Raised);
-        this.setFrameShape(Shape.WinPanel);
+        setFrameShadow(Shadow.Raised);
+        setFrameShape(Shape.WinPanel);
         
         tick();
     }

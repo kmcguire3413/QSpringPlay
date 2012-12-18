@@ -4,18 +4,18 @@ import com.trolltech.qt.gui.QFrame;
 import com.trolltech.qt.gui.QResizeEvent;
 import com.trolltech.qt.gui.QScrollBar;
 import com.trolltech.qt.gui.QWidget;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class QTaskArea extends QFrame {
-    List<QTaskPanel>            widgets;
+    Set<QTaskPanel>            widgets;
     QWidget                     surface;
     QScrollBar                  scrollbar;
     
     public QTaskArea() {
         super();
         
-        widgets = new ArrayList<QTaskPanel>();
+        widgets = new HashSet<QTaskPanel>();
         surface = new QWidget(this);
         scrollbar = new QScrollBar(this);
         

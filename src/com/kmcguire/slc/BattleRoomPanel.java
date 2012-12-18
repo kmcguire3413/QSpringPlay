@@ -47,6 +47,8 @@ public class BattleRoomPanel extends Panel {
     private QWidget                        chatSurface;
     private LobbyService                   ls;
 
+    private TaskPanelBattle                 taskPanel;
+    
     private Map<String, QListWidgetItem>   userToListWidget;
 
     private String                          chatMsg;
@@ -103,6 +105,7 @@ public class BattleRoomPanel extends Panel {
         
         userToListWidget = new HashMap<String, QListWidgetItem>();
         
+        taskPanel = new TaskPanelBattle(services);
         
         // chatMsg, chatJoinMsg, chatPartMsg, chatJoinBattleMsg, chatNormalMsg
         
@@ -117,10 +120,17 @@ public class BattleRoomPanel extends Panel {
         return instance;
     }
     public static void joinBattle(int bid) {
-        getInstance().chat.appendPlainText(String.format("-!- joined battle %d", bid));
-        getInstance().cbid = bid;
-        getInstance().populateUsers();
-        getInstance().services.getLobbyService().joinBattle(bid);
+        BattleRoomPanel     brp;
+        
+        brp = getInstance();
+        
+        brp.services.getTaskArea().addWidget(brp.taskPanel);
+        brp.taskPanel.configureForBattle(bid);
+        
+        brp.chat.appendPlainText(String.format("-!- joined battle %d", bid));
+        brp.cbid = bid;
+        brp.populateUsers();
+        brp.services.getLobbyService().joinBattle(bid);
     }
     
     private void populateUsers() {
