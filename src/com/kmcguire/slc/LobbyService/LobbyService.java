@@ -342,7 +342,7 @@ public class LobbyService {
         } else if (cmd.equals("UPDATEBATTLEINFO")) {
             event = new UpdateBattleInfoEvent(
                     nm.getIntParam(), nm.getIntParam(), nm.getBoolParam(),
-                    nm.getLongParam(), nm.getWordParam()
+                    nm.getLongParam(), nm.getSentenceParam()
             );
         } else if (cmd.equals("MOTD")) {
             event = new MotdEvent( nm.getSentenceParam() );
